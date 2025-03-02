@@ -1,0 +1,2 @@
+# CONNECTA
+Android Studio Project
