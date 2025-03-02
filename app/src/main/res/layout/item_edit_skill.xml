@@ -21,14 +21,31 @@
         android:textSize="14sp"
         android:layout_marginTop="8dp" />
 
-    <!-- Skill Level -->
-    <EditText
-        android:id="@+id/edit_skill_level"
-        android:layout_width="match_parent"
+    <!-- Skill Level Dropdown -->
+    <TextView
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:hint="Skill Level (e.g., Beginner, Intermediate)"
+        android:text="Skill Level"
         android:textSize="14sp"
         android:layout_marginTop="8dp" />
+    <Spinner
+        android:id="@+id/skill_level_spinner"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp" />
+
+    <!-- Experience Level Dropdown -->
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Experience Level"
+        android:textSize="14sp"
+        android:layout_marginTop="8dp" />
+    <Spinner
+        android:id="@+id/experience_level_spinner"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp" />
 
     <!-- Remove Skill Button -->
     <Button

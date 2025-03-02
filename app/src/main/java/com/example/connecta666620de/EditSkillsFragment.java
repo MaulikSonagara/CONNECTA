@@ -95,7 +95,7 @@ public class EditSkillsFragment extends Fragment {
 
     private void addNewSkill() {
         // Add a new empty skill to the list
-        Skill newSkill = new Skill("", "", "");
+        Skill newSkill = new Skill("", "", "Beginner", "Less than 1 year"); // Default values for skillLevel and experienceLevel
         skillsList.add(newSkill);
         editSkillsAdapter.notifyDataSetChanged(); // Refresh the RecyclerView
     }

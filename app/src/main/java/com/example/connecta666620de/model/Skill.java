@@ -3,16 +3,18 @@ package com.example.connecta666620de.model;
 public class Skill {
     private String title;
     private String description;
-    private String level;
+    private String skillLevel; // Updated to use dropdown
+    private String experienceLevel; // New field
 
     // Default constructor (required for Firebase)
     public Skill() {}
 
     // Parameterized constructor
-    public Skill(String title, String description, String level) {
+    public Skill(String title, String description, String skillLevel, String experienceLevel) {
         this.title = title;
         this.description = description;
-        this.level = level;
+        this.skillLevel = skillLevel;
+        this.experienceLevel = experienceLevel;
     }
 
     // Getters and Setters
@@ -22,6 +24,9 @@ public class Skill {
     public String getDescription() { return description; }
     public void setDescription(String description) { this.description = description; }
 
-    public String getLevel() { return level; }
-    public void setLevel(String level) { this.level = level; }
+    public String getSkillLevel() { return skillLevel; }
+    public void setSkillLevel(String skillLevel) { this.skillLevel = skillLevel; }
+
+    public String getExperienceLevel() { return experienceLevel; }
+    public void setExperienceLevel(String experienceLevel) { this.experienceLevel = experienceLevel; }
 }

@@ -1,9 +1,6 @@
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    xmlns:tools="http://schemas.android.com/tools"
-    android:orientation="vertical"
-    tools:context=".EditSkillsFragment"
     android:padding="16dp">
 
     <!-- Add Skill Button -->
@@ -12,7 +9,8 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Add Skill"
-        android:layout_gravity="center_horizontal"
+        android:layout_alignParentTop="true"
+        android:layout_centerHorizontal="true"
         android:layout_marginBottom="16dp" />
 
     <!-- RecyclerView for Skills -->
@@ -20,14 +18,18 @@
         android:id="@+id/skills_recyclerView"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="8dp" />
+        android:layout_below="@id/add_skill_button"
+        android:layout_above="@id/save_skills_button"
+        android:layout_marginTop="8dp"
+        android:layout_marginBottom="8dp" />
 
-    <!-- Save Button -->
+    <!-- Save Skills Button -->
     <Button
         android:id="@+id/save_skills_button"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="Save Skills"
+        android:layout_alignParentBottom="true"
         android:layout_marginTop="16dp" />
 
-</LinearLayout>
+</RelativeLayout>
