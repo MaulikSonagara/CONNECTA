@@ -10,6 +10,7 @@ import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
+import androidx.fragment.app.FragmentTransaction;
 
 import android.os.Handler;
 import android.view.*;
@@ -43,6 +44,7 @@ public class ProfileFragment extends Fragment {
     DatabaseReference databaseReference;
     SettingFragment settingFragment;
     ProgressDialog pd;
+    LinearLayout editSkillBtn;
 
 
     ImageView avatarIv, settingBtn;
@@ -121,8 +123,11 @@ public class ProfileFragment extends Fragment {
         followingTv = view.findViewById(R.id.following_data_profile);
         postsTv = view.findViewById(R.id.post_data_profile);
         settingBtn = view.findViewById(R.id.settingBtn);
+        editSkillBtn = view.findViewById(R.id.edit_skills_button);
 
         settingFragment = new SettingFragment();
+
+        editSkillBtn.setOnClickListener(v -> openEditSkillsFragment());
 
         // Getting Profile Pic
         FireBaseUtill.getCurrentProfilePicStorageRef().getDownloadUrl().addOnCompleteListener(task -> {
@@ -147,5 +152,16 @@ public class ProfileFragment extends Fragment {
                     .commit();
         });
 
+    }
+
+    private void openEditSkillsFragment() {
+        // Create an instance of the EditSkillsFragment
+        EditSkillsFragment editSkillsFragment = new EditSkillsFragment();
+
+        // Replace the current fragment with the EditSkillsFragment
+        FragmentTransaction transaction = getParentFragmentManager().beginTransaction();
+        transaction.replace(R.id.main_frame_layout, editSkillsFragment); // Replace `fragment_container` with your container ID
+        transaction.addToBackStack(null); // Add to back stack so the user can navigate back
+        transaction.commit();
     }
 }

@@ -1,14 +1,33 @@
-<?xml version="1.0" encoding="utf-8"?>
-<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".EditSkillsFragment">
+    xmlns:tools="http://schemas.android.com/tools"
+    android:orientation="vertical"
+    tools:context=".EditSkillsFragment"
+    android:padding="16dp">
 
-    <!-- TODO: Update blank fragment layout -->
-    <TextView
+    <!-- Add Skill Button -->
+    <Button
+        android:id="@+id/add_skill_button"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Add Skill"
+        android:layout_gravity="center_horizontal"
+        android:layout_marginBottom="16dp" />
+
+    <!-- RecyclerView for Skills -->
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/skills_recyclerView"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:text="@string/hello_blank_fragment" />
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp" />
 
-</FrameLayout>
+    <!-- Save Button -->
+    <Button
+        android:id="@+id/save_skills_button"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Save Skills"
+        android:layout_marginTop="16dp" />
+
+</LinearLayout>
