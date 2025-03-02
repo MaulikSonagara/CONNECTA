@@ -1,0 +1,17 @@
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <!-- Base application theme. -->
+    <style name="Base.Theme.CONNECTA666620DE" parent="Theme.Material3.DayNight.NoActionBar">
+        <!-- Customize your light theme here. -->
+        <!-- <item name="colorPrimary">@color/my_light_primary</item> -->
+        <item name="android:windowDrawsSystemBarBackgrounds">true</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:windowTranslucentStatus">false</item>
+
+    </style>
+
+    <style name="Theme.CONNECTA666620DE" parent="Base.Theme.CONNECTA666620DE" />
+
+    <style name="Circular">
+        <item name="cornerSize">50%</item>
+    </style>
+</resources>

@@ -1,0 +1,42 @@
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="8dp">
+
+    <!-- Skill Title -->
+    <EditText
+        android:id="@+id/edit_skill_title"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Skill Title"
+        android:textSize="16sp" />
+
+    <!-- Skill Description -->
+    <EditText
+        android:id="@+id/edit_skill_description"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Skill Description"
+        android:textSize="14sp"
+        android:layout_marginTop="8dp" />
+
+    <!-- Skill Level -->
+    <EditText
+        android:id="@+id/edit_skill_level"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Skill Level (e.g., Beginner, Intermediate)"
+        android:textSize="14sp"
+        android:layout_marginTop="8dp" />
+
+    <!-- Remove Skill Button -->
+    <Button
+        android:id="@+id/remove_skill_button"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Remove Skill"
+        android:layout_gravity="end"
+        android:layout_marginTop="8dp" />
+
+</LinearLayout>

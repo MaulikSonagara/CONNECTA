@@ -1,0 +1,186 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:card_view="http://schemas.android.com/tools"
+    android:layout_centerInParent="true"
+    android:gravity="center">
+    
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_centerInParent="true">
+        <androidx.cardview.widget.CardView
+            android:layout_width="match_parent"
+            android:layout_height="240dp"
+            android:layout_marginTop="40dp"
+            app:cardCornerRadius="15dp"
+            app:cardElevation="10dp"
+            app:cardUseCompatPadding="true"
+            card_view:cardCornerRAdius="5dp">
+
+            <LinearLayout
+                android:orientation="vertical"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="23dp">
+
+                <TextView
+                    android:id="@+id/name_profile"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Maulik Sonagara"
+                    android:gravity="center"
+                    android:fontFamily="@font/ebgaramond"
+                    android:layout_marginTop="15dp"
+                    android:textSize="20sp"
+                    android:textStyle="bold"/>
+
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="1dp"
+                    android:background="@color/light_grey"/>
+
+                <TextView
+                    android:id="@+id/bio_profile"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="5dp"
+                    android:fontFamily="@font/ebgaramond"
+                    android:gravity="center"
+                    android:maxLines="4"
+                    android:text="Hello My name is \nmaulik and i like nothing"
+                    android:textSize="15sp" />
+
+
+
+                <RelativeLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content">
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:layout_marginTop="1dp"
+                        android:background="@color/light_grey"
+                        android:layout_above="@+id/connectionLayout"/>
+                <LinearLayout
+                    android:id="@+id/connectionLayout"
+                    android:layout_width="match_parent"
+                    android:layout_height="50dp"
+                    android:orientation="horizontal"
+                    android:weightSum="3"
+                    android:gravity="center"
+                    android:layout_alignParentBottom="true"
+                    >
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:gravity="center"
+                        android:orientation="vertical"
+                        android:layout_weight="1">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Posts"
+                            android:textSize="10dp"
+                            android:fontFamily="@font/ebgaramond"
+                            />
+
+                        <TextView
+                            android:id="@+id/post_data_profile"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="100"
+                            android:textStyle="bold"
+                            android:textSize="15dp"
+                            android:fontFamily="@font/dancingscript"
+                            />
+
+                    </LinearLayout>
+
+                    <View
+                        android:layout_width="1dp"
+                        android:layout_height="match_parent"
+                        android:background="@color/black"/>
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:gravity="center"
+                        android:orientation="vertical"
+                        android:layout_weight="1">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Followers"
+                            android:textSize="10dp"
+                            android:fontFamily="@font/ebgaramond"
+                            />
+
+                        <TextView
+                            android:id="@+id/follower_data_profile"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="100"
+                            android:textStyle="bold"
+                            android:textSize="15dp"
+                            android:fontFamily="@font/dancingscript"/>
+
+                    </LinearLayout>
+
+                    <View
+                        android:layout_width="1dp"
+                        android:layout_height="match_parent"
+                        android:background="@color/black"/>
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:gravity="center"
+                        android:orientation="vertical"
+                        android:layout_weight="1">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Following"
+                            android:textSize="10dp"
+                            android:fontFamily="@font/ebgaramond"
+                            />
+
+                        <TextView
+                            android:id="@+id/following_data_profile"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="100"
+                            android:textStyle="bold"
+                            android:textSize="15dp"
+                            android:fontFamily="@font/dancingscript"/>
+
+                    </LinearLayout>
+
+                </LinearLayout>
+                </RelativeLayout>
+
+
+            </LinearLayout>
+
+        </androidx.cardview.widget.CardView>
+
+        
+    </RelativeLayout>
+    <com.google.android.material.imageview.ShapeableImageView
+        android:id="@+id/profileimage_profile"
+        android:layout_width="98dp"
+        android:layout_height="98dp"
+        android:src="@drawable/person_icon"
+        app:shapeAppearanceOverlay="@style/Circular"
+        android:elevation="15dp"
+        android:padding="5dp"
+        android:layout_centerHorizontal="true"/>
+    
+
+</RelativeLayout>
