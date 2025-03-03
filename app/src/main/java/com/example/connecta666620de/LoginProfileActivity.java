@@ -110,6 +110,7 @@ public class LoginProfileActivity extends AppCompatActivity {
                         } else {
                             // 🔹 Username is unique OR already belongs to the current user
                             HashMap<Object, String> hashMap = new HashMap<>();
+                            hashMap.put("uId",firebaseAuth.getCurrentUser().getUid().toString());
                             hashMap.put("firstName", fName);
                             hashMap.put("lastName", lName);
                             hashMap.put("userName", uName);

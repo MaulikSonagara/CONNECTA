@@ -4,6 +4,7 @@ import com.google.firebase.Timestamp;
 
 public class UserModel {
     private String firstName;
+    private String uId;
     private String lastName;
     private String userName;
     private String email;
@@ -14,9 +15,9 @@ public class UserModel {
     // Default constructor (required for Firebase)
     public UserModel() {}
 
-    // Parameterized constructor
-    public UserModel(String firstName, String lastName, String userName, String email, Timestamp createdAt, String bio, String image) {
+    public UserModel(String firstName, String uid, String lastName, String userName, String email, Timestamp createdAt, String bio, String image) {
         this.firstName = firstName;
+        uId = uid;
         this.lastName = lastName;
         this.userName = userName;
         this.email = email;
@@ -26,6 +27,14 @@ public class UserModel {
     }
 
     // Getters and Setters
+    public String getUid() {
+        return uId;
+    }
+
+    public void setUid(String uid) {
+        uId = uid;
+    }
+
     public String getFirstName() { return firstName; }
     public void setFirstName(String firstName) { this.firstName = firstName; }
 

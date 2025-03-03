@@ -183,6 +183,7 @@ public class EditProfileFragment extends Fragment {
                             hashMap.put("image", image); // Retain existing image URL
                         }
 
+                        hashMap.put("uId", firebaseAuth.getCurrentUser().getUid().toString());
                         hashMap.put("firstName", fName);
                         hashMap.put("lastName", lName);
                         hashMap.put("userName", uName);

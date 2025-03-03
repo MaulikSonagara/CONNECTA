@@ -16,7 +16,7 @@
             android:textSize="20sp"
             android:hint="Search User"
             android:textStyle="bold"
-            android:fontFamily="@font/oleoscriptbold"
+            android:fontFamily="@font/ebgaramond"
             android:layout_alignParentStart="true"
             android:layout_centerInParent="true"
             android:imeOptions="actionSearch"
