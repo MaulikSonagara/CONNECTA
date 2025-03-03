@@ -49,6 +49,7 @@ public class EditProfileFragment extends Fragment {
     Uri selectedImageUri;
     String emailAddress;
     String image;
+    String posts, follower, following;
 
 
     ActivityResultLauncher<Intent> imagePickLauncher;
@@ -189,7 +190,9 @@ public class EditProfileFragment extends Fragment {
                         hashMap.put("userName", uName);
                         hashMap.put("email", emailAddress);
                         hashMap.put("bio", bioData);
-
+                        hashMap.put("posts", posts);
+                        hashMap.put("follower", follower);
+                        hashMap.put("following", following);
 
                         reference.child(FireBaseUtill.currentUserId()).setValue(hashMap).addOnCompleteListener(task -> {
                             if (task.isSuccessful()) {
@@ -237,12 +240,17 @@ public class EditProfileFragment extends Fragment {
                     String uname = "" + ds.child("userName").getValue();
                     String bioData = "" + ds.child("bio").getValue();
                     image = "" + ds.child("image").getValue();
+                    posts = "" + ds.child("posts").getValue();
+                    follower = "" + ds.child("follower").getValue();
+                    following = "" + ds.child("following").getValue();
 
                     //set data
                     firstName.setText(fName);
                     lastName.setText(lName);
                     userName.setText(uname);
+
                     bio.setText(bioData);
+
                 }
             }
 

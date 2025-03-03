@@ -1,7 +1,9 @@
 package com.example.connecta666620de.model;
 
 import android.content.Context;
+import android.content.Intent;
 import android.graphics.Color;
+import android.os.Bundle;
 import android.util.Log;
 import android.view.Gravity;
 import android.view.LayoutInflater;
@@ -12,11 +14,14 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
+import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.request.RequestOptions;
+import com.example.connecta666620de.MainActivity;
 import com.example.connecta666620de.R;
+import com.example.connecta666620de.ShowUserFragment;
 import com.example.connecta666620de.model.UserModel;
 import com.example.connecta666620de.model.Skill;
 import com.example.connecta666620de.utills.AndroidUtil;
@@ -94,7 +99,21 @@ public class AdapterUsers extends RecyclerView.Adapter<AdapterUsers.MyHolder> {
         fetchUserSkills(user.getUid(), holder.skillsContainer);
 
         // Handle item click
-        holder.itemView.setOnClickListener(v -> AndroidUtil.showToast(context, user.getUserName()));
+        holder.itemView.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Fragment showUserFragment = new ShowUserFragment();
+                Bundle args = new Bundle();
+                args.putString("userId", user.getUid());
+                showUserFragment.setArguments(args);
+
+                // Replace the current fragment with ShowUserFragment
+                ((MainActivity) context).getSupportFragmentManager().beginTransaction()
+                        .replace(R.id.main_frame_layout, showUserFragment)
+                        .addToBackStack(null)
+                        .commit();
+            }
+        });
     }
 
     @Override

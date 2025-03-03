@@ -4,6 +4,10 @@ import android.app.ProgressDialog;
 import android.graphics.Color;
 import android.net.Uri;
 import android.os.Bundle;
+
+import androidx.annotation.NonNull;
+import androidx.fragment.app.Fragment;
+
 import android.util.Log;
 import android.view.Gravity;
 import android.view.LayoutInflater;
@@ -13,14 +17,10 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.fragment.app.Fragment;
-import androidx.fragment.app.FragmentTransaction;
-
+import com.bumptech.glide.Glide;
+import com.bumptech.glide.request.RequestOptions;
 import com.example.connecta666620de.model.Skill;
 import com.example.connecta666620de.utills.AndroidUtil;
-import com.example.connecta666620de.utills.FireBaseUtill;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.DataSnapshot;
@@ -29,36 +29,37 @@ import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.Query;
 import com.google.firebase.database.ValueEventListener;
+import com.google.firebase.storage.FirebaseStorage;
+import com.google.firebase.storage.StorageReference;
 
 import java.util.ArrayList;
 import java.util.List;
 
-public class ProfileFragment extends Fragment {
+public class ShowUserFragment extends Fragment {
+
+
+    String searchedUserUid;
 
     FirebaseAuth firebaseAuth;
     FirebaseUser user;
     FirebaseDatabase firebaseDatabase;
     DatabaseReference databaseReference;
-    ProgressDialog pd;
-    LinearLayout editSkillBtn, skillsContainer;
-
-    ImageView avatarIv, settingBtn;
     TextView nameTv, usernameTv, bioTv, followersTv, followingTv, postsTv;
+    ImageView avatarIv;
+    LinearLayout skillsContainer;
 
     @Override
-    public void onCreate(@Nullable Bundle savedInstanceState) {
+    public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-    }
 
-    public ProfileFragment() {
-        // Required empty public constructor
+
     }
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         // Inflate the layout for this fragment
-        View view = inflater.inflate(R.layout.fragment_profile, container, false);
+        View view = inflater.inflate(R.layout.fragment_show_user, container, false);
 
         // Initialize Firebase
         firebaseAuth = FirebaseAuth.getInstance();
@@ -67,17 +68,18 @@ public class ProfileFragment extends Fragment {
         databaseReference = firebaseDatabase.getReference("Connecta").child("ConnectaUsers");
 
         // Initialize views
-        pd = new ProgressDialog(getContext());
         avatarIv = view.findViewById(R.id.profileimage_profile);
         nameTv = view.findViewById(R.id.name_profile);
-        usernameTv = view.findViewById(R.id.username_profile);
+        usernameTv = view.findViewById(R.id.uname_searchedprofile);
         bioTv = view.findViewById(R.id.bio_profile);
         followersTv = view.findViewById(R.id.follower_data_profile);
         followingTv = view.findViewById(R.id.following_data_profile);
         postsTv = view.findViewById(R.id.post_data_profile);
-        settingBtn = view.findViewById(R.id.settingBtn);
-        editSkillBtn = view.findViewById(R.id.edit_skills_button);
         skillsContainer = view.findViewById(R.id.skills_container);
+
+        if (getArguments() != null) {
+            searchedUserUid = getArguments().getString("userId");
+        }
 
         // Fetch user profile data
         fetchUserProfileData();
@@ -85,24 +87,11 @@ public class ProfileFragment extends Fragment {
         // Fetch user skills
         fetchUserSkills();
 
-        // Set click listeners
-        editSkillBtn.setOnClickListener(v -> openEditSkillsFragment());
-
-        settingBtn.setOnClickListener(v -> openSettingFragment());
-
-        // Load profile picture
-        FireBaseUtill.getCurrentProfilePicStorageRef().getDownloadUrl().addOnCompleteListener(task -> {
-            if (task.isSuccessful()) {
-                Uri uri = task.getResult();
-                AndroidUtil.setProfilePic(getContext(), uri, avatarIv);
-            }
-        });
-
         return view;
     }
 
     private void fetchUserProfileData() {
-        Query query = databaseReference.orderByChild("email").equalTo(user.getEmail());
+        Query query = databaseReference.orderByChild("uId").equalTo(searchedUserUid);
         query.addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot snapshot) {
@@ -111,11 +100,46 @@ public class ProfileFragment extends Fragment {
                     String lastName = "" + ds.child("lastName").getValue();
                     String bio = "" + ds.child("bio").getValue();
                     String username = "" + ds.child("userName").getValue();
+                    String profilePicUrl = "" + ds.child("image").getValue();
                     String followers = "" + ds.child("follower").getValue();
                     String following = "" + ds.child("following").getValue();
                     String posts = "" + ds.child("posts").getValue();
 
-                    // Set profile data
+                    Log.d("ProfilePic",profilePicUrl);
+
+                    if (profilePicUrl != null && !profilePicUrl.isEmpty()) {
+                        if (profilePicUrl.startsWith("gs://")) {
+                            FirebaseStorage storage = FirebaseStorage.getInstance();
+                            StorageReference storageRef = storage.getReferenceFromUrl(profilePicUrl);
+
+                            storageRef.getDownloadUrl().addOnSuccessListener(uri -> {
+                                Log.d("GlideDebug", "Converted URL: " + uri.toString());
+                                Glide.with(getContext())
+                                        .load(uri.toString()) // Load HTTP URL
+                                        .apply(RequestOptions.circleCropTransform())
+                                        .placeholder(R.drawable.person_icon)
+                                        .error(R.drawable.person_icon)
+                                        .into(avatarIv);
+                            }).addOnFailureListener(e -> {
+                                Log.e("GlideDebug", "Failed to get download URL: " + e.getMessage());
+                                avatarIv.setImageResource(R.drawable.person_icon);
+                            });
+                        } else {
+                            Glide.with(getContext())
+                                    .load(profilePicUrl)
+                                    .apply(RequestOptions.circleCropTransform())
+                                    .placeholder(R.drawable.person_icon)
+                                    .error(R.drawable.person_icon)
+                                    .into(avatarIv);
+                            Log.d("GlideDebug", "Loading image: " + profilePicUrl);
+                        }
+                    } else {
+                        avatarIv.setImageResource(R.drawable.person_icon);
+                        Log.e("GlideDebug", "No image URL provided for user: " + searchedUserUid);
+                    }
+
+                    // set profile data
+                    usernameTv.setText("@" + username);
                     nameTv.setText(firstName + " " + lastName);
                     usernameTv.setText("@" + username);
                     bioTv.setText(bio);
@@ -127,7 +151,7 @@ public class ProfileFragment extends Fragment {
 
             @Override
             public void onCancelled(@NonNull DatabaseError error) {
-                Log.e("ProfileFragment", "Failed to load profile data: " + error.getMessage());
+                    Log.e("ProfileFragment", "Failed to load profile data: " + error.getMessage());
             }
         });
     }
@@ -136,7 +160,7 @@ public class ProfileFragment extends Fragment {
         DatabaseReference skillsRef = FirebaseDatabase.getInstance()
                 .getReference("Connecta")
                 .child("ConnectaUserSkills")
-                .child(user.getUid());
+                .child(searchedUserUid);
 
         skillsRef.addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
@@ -157,6 +181,8 @@ public class ProfileFragment extends Fragment {
                 Log.e("ProfileFragment", "Failed to load skills: " + error.getMessage());
             }
         });
+
+
     }
 
     private void updateSkillsUI(List<Skill> skills) {
@@ -190,32 +216,6 @@ public class ProfileFragment extends Fragment {
         }
     }
 
-    private void openEditSkillsFragment() {
-        // Create an instance of the EditSkillsFragment
-        EditSkillsFragment editSkillsFragment = new EditSkillsFragment();
-
-        // Replace the current fragment with the EditSkillsFragment
-        FragmentTransaction transaction = getParentFragmentManager().beginTransaction();
-        transaction.replace(R.id.main_frame_layout, editSkillsFragment); // Replace `main_frame_layout` with your container ID
-        transaction.addToBackStack(null); // Add to back stack so the user can navigate back
-        transaction.commit();
-    }
-
-    private void openSettingFragment() {
-        Fragment settingFragment = new SettingFragment();
-        Bundle bundle = new Bundle();
-
-        // Pass profile data
-        bundle.putString("name", nameTv.getText().toString());
-
-        settingFragment.setArguments(bundle);
-
-        requireActivity().getSupportFragmentManager().beginTransaction()
-                .replace(R.id.main_frame_layout, settingFragment)
-                .addToBackStack(null)
-                .commit();
-    }
-
     private int getSkillBackgroundColor(String skillLevel) {
         switch (skillLevel) {
             case "Beginner":
@@ -232,4 +232,6 @@ public class ProfileFragment extends Fragment {
                 return Color.parseColor("#ADD8E6"); // Default to Light Blue
         }
     }
+
+
 }

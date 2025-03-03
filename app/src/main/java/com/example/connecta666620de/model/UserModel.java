@@ -12,18 +12,23 @@ public class UserModel {
     private String bio;
     private String image;
 
+    private  String posts,follower,following;
+
     // Default constructor (required for Firebase)
     public UserModel() {}
 
-    public UserModel(String firstName, String uid, String lastName, String userName, String email, Timestamp createdAt, String bio, String image) {
+    public UserModel(String firstName, String uId, String lastName, String userName, String email, Timestamp createdAt, String bio, String image, String posts, String follower, String following) {
         this.firstName = firstName;
-        uId = uid;
+        this.uId = uId;
         this.lastName = lastName;
         this.userName = userName;
         this.email = email;
         this.createdAt = createdAt;
         this.bio = bio;
         this.image = image;
+        this.posts = posts;
+        this.follower = follower;
+        this.following = following;
     }
 
     // Getters and Setters
@@ -33,6 +38,30 @@ public class UserModel {
 
     public void setUid(String uid) {
         uId = uid;
+    }
+
+    public String getPosts() {
+        return posts;
+    }
+
+    public void setPosts(String posts) {
+        this.posts = posts;
+    }
+
+    public String getFollower() {
+        return follower;
+    }
+
+    public void setFollower(String follower) {
+        this.follower = follower;
+    }
+
+    public String getFollowing() {
+        return following;
+    }
+
+    public void setFollowing(String following) {
+        this.following = following;
     }
 
     public String getFirstName() { return firstName; }

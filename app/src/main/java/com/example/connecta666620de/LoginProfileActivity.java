@@ -36,7 +36,7 @@ public class LoginProfileActivity extends AppCompatActivity {
     FirebaseAuth firebaseAuth;
     String image;
     FirebaseUser user;
-    String bio;
+    String bio, posts, follower, following;
 
     @SuppressLint("MissingInflatedId")
     @Override
@@ -108,6 +108,13 @@ public class LoginProfileActivity extends AppCompatActivity {
                             userName.setError("Username is already taken");
                             userName.requestFocus();
                         } else {
+
+
+                            posts = (posts == null || posts.equals("null")) ? "0" : posts;
+                            follower = (follower == null || follower.equals("null")) ? "0" : follower;
+                            following = (following == null || following.equals("null")) ? "0" : following;
+
+
                             // 🔹 Username is unique OR already belongs to the current user
                             HashMap<Object, String> hashMap = new HashMap<>();
                             hashMap.put("uId",firebaseAuth.getCurrentUser().getUid().toString());
@@ -117,6 +124,9 @@ public class LoginProfileActivity extends AppCompatActivity {
                             hashMap.put("bio", bio);
                             hashMap.put("image", image);
                             hashMap.put("email", firebaseAuth.getCurrentUser().getEmail());
+                            hashMap.put("posts", posts);
+                            hashMap.put("follower", follower);
+                            hashMap.put("following", following);
 
                             reference.child(FireBaseUtill.currentUserId()).setValue(hashMap).addOnCompleteListener(task -> {
                                 if (task.isSuccessful()) {
@@ -158,6 +168,9 @@ public class LoginProfileActivity extends AppCompatActivity {
                     String uname = "" + ds.child("userName").getValue();
                     image = "" + ds.child("image").getValue();
                     bio = "" + ds.child("bio").getValue();
+                    posts = "" + ds.child("posts").getValue();
+                    follower = "" + ds.child("follower").getValue();
+                    following = "" + ds.child("following").getValue();
 
                     //set data
                     firstName.setText(fName);

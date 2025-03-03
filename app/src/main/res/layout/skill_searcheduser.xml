@@ -1,0 +1,74 @@
+<androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:card_view="http://schemas.android.com/tools"
+    app:cardCornerRadius="15dp"
+    app:cardElevation="10dp"
+    app:cardUseCompatPadding="true"
+    card_view:cardcornerradius="5dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="8dp">
+
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:padding="1dp"
+                android:gravity="center"
+                android:layout_alignParentStart="true">
+
+                <ImageView
+                    android:layout_width="35dp"
+                    android:layout_height="35dp"
+                    android:src="@drawable/superpower_icon"
+                    android:padding="1dp"/>
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="SuperPowers"
+                    android:textSize="15sp"
+                    android:layout_margin="5dp"
+                    android:textStyle="bold|normal"
+                    android:fontFamily="@font/ebgaramond"/>
+            </LinearLayout>
+
+        </RelativeLayout>
+
+        <!-- Skills Container -->
+        <LinearLayout
+            android:id="@+id/skills_container"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:weightSum="4"
+            android:gravity="center">
+            <!-- Skills will be added dynamically here -->
+        </LinearLayout>
+
+        <!--        <TextView-->
+        <!--            android:layout_width="wrap_content"-->
+        <!--            android:layout_height="wrap_content"-->
+        <!--            android:text="Skills"-->
+        <!--            android:layout_weight="1"-->
+        <!--            android:textSize="15sp"-->
+        <!--            android:layout_margin="5dp"-->
+        <!--            android:textStyle="bold|normal"-->
+        <!--            android:paddingLeft="16dp"-->
+        <!--            android:paddingRight="16dp"-->
+        <!--            android:gravity="center"-->
+        <!--            android:paddingTop="8dp"-->
+        <!--            android:paddingBottom="8dp"-->
+        <!--            android:background="#ADD8E6"-->
+        <!--            android:fontFamily="@font/ebgaramond"/>-->
+
+    </LinearLayout>
+</androidx.cardview.widget.CardView>
