@@ -5,14 +5,24 @@
     android:padding="8dp">
 
     <!-- Skill Title -->
+    <com.google.android.material.textfield.TextInputLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        >
     <EditText
         android:id="@+id/edit_skill_title"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:hint="Skill Title"
         android:textSize="16sp" />
+    </com.google.android.material.textfield.TextInputLayout>
+
 
     <!-- Skill Description -->
+    <com.google.android.material.textfield.TextInputLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        >
     <EditText
         android:id="@+id/edit_skill_description"
         android:layout_width="match_parent"
@@ -20,6 +30,7 @@
         android:hint="Skill Description"
         android:textSize="14sp"
         android:layout_marginTop="8dp" />
+    </com.google.android.material.textfield.TextInputLayout>
 
     <!-- Skill Level Dropdown -->
     <TextView

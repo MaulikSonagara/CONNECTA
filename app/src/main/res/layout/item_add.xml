@@ -76,5 +76,22 @@
             android:gravity="center">
             <!-- Skills will be added dynamically here -->
         </LinearLayout>
+
+<!--        <TextView-->
+<!--            android:layout_width="wrap_content"-->
+<!--            android:layout_height="wrap_content"-->
+<!--            android:text="Skills"-->
+<!--            android:layout_weight="1"-->
+<!--            android:textSize="15sp"-->
+<!--            android:layout_margin="5dp"-->
+<!--            android:textStyle="bold|normal"-->
+<!--            android:paddingLeft="16dp"-->
+<!--            android:paddingRight="16dp"-->
+<!--            android:gravity="center"-->
+<!--            android:paddingTop="8dp"-->
+<!--            android:paddingBottom="8dp"-->
+<!--            android:background="#ADD8E6"-->
+<!--            android:fontFamily="@font/ebgaramond"/>-->
+
     </LinearLayout>
 </androidx.cardview.widget.CardView>
