@@ -3,6 +3,7 @@ package com.example.connecta666620de.adapters;
 import android.content.Context;
 import android.graphics.Typeface;
 import android.net.Uri;
+import android.os.Bundle;
 import android.text.Spannable;
 import android.text.SpannableString;
 import android.text.style.StyleSpan;
@@ -14,11 +15,15 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
+import androidx.fragment.app.Fragment;
+import androidx.fragment.app.FragmentActivity;
+import androidx.fragment.app.FragmentManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.request.RequestOptions;
 import com.example.connecta666620de.R;
+import com.example.connecta666620de.ShowUserFragment;
 import com.example.connecta666620de.model.Notification;
 import com.example.connecta666620de.utills.AndroidUtil;
 import com.google.android.material.imageview.ShapeableImageView;
@@ -112,6 +117,32 @@ public class NotificationAdapter extends RecyclerView.Adapter<NotificationAdapte
                         holder.notificationTextTv.setText("New notification");
                     }
                 });
+
+        // Handle item click
+        holder.itemView.setOnClickListener(v -> {
+            // Determine which user's profile to open based on notification type
+            String userIdToOpen;
+            if (notification.getType().equals("you_followed")) {
+                // For "You followed" notifications, open the profile of who you followed
+                userIdToOpen = notification.getReceiverId();
+            } else {
+                // For all other notifications, open the profile of who sent it
+                userIdToOpen = notification.getSenderId();
+            }
+
+            // Create and show the profile fragment
+            Fragment showUserFragment = new ShowUserFragment();
+            Bundle args = new Bundle();
+            args.putString("userId", userIdToOpen);
+            showUserFragment.setArguments(args);
+
+            // Use the fragment's context to get the FragmentManager
+            FragmentManager fragmentManager = ((FragmentActivity) context).getSupportFragmentManager();
+            fragmentManager.beginTransaction()
+                    .replace(R.id.main_frame_layout, showUserFragment)
+                    .addToBackStack("notification_to_profile") // Optional back stack name
+                    .commit();
+        });
     }
 
     private String getTimeAgo(long timestamp) {
