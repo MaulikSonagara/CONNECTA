@@ -7,6 +7,7 @@ import android.widget.Toast;
 
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.request.RequestOptions;
+import com.example.connecta666620de.R;
 
 
 public class AndroidUtil {
@@ -19,5 +20,11 @@ public class AndroidUtil {
         Glide.with(context).load(imageUri).apply(RequestOptions.circleCropTransform()).into(imageView);
     }
 
+    public static RequestOptions getProfilePicOptions() {
+        return new RequestOptions()
+                .circleCrop()
+                .placeholder(R.drawable.person_icon)
+                .error(R.drawable.person_icon);
+    }
 
 }

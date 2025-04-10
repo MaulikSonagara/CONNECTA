@@ -3,6 +3,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     tools:context=".ShowUserFragment"
     android:orientation="vertical">
 
@@ -41,31 +42,33 @@
 
             <include layout="@layout/item_profiledata"/>
             <LinearLayout
+                android:id="@+id/action_buttons_container"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="horizontal"
                 android:weightSum="2"
                 android:gravity="center"
-                >
+                android:layout_marginTop="16dp">
 
                 <com.google.android.material.button.MaterialButton
-                    android:layout_width="wrap_content"
+                    android:id="@+id/connect_btn"
+                    android:layout_width="0dp"
                     android:layout_height="wrap_content"
-                    android:text="Connect"
                     android:layout_weight="1"
                     android:layout_marginStart="10dp"
                     android:layout_marginEnd="5dp"
-                    />
+                    android:text="Connect"
+                    app:backgroundTint="@color/connect_color"/>
 
                 <com.google.android.material.button.MaterialButton
-                    android:layout_width="wrap_content"
+                    android:id="@+id/message_btn"
+                    android:layout_width="0dp"
                     android:layout_height="wrap_content"
-                    android:text="Message"
                     android:layout_weight="1"
                     android:layout_marginStart="5dp"
                     android:layout_marginEnd="10dp"
-                    />
-
+                    android:text="Message"
+                    app:backgroundTint="@color/message_color"/>
             </LinearLayout>
             <include layout="@layout/skill_searcheduser"/>
 

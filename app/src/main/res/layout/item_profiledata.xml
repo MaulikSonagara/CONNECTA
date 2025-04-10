@@ -107,6 +107,7 @@
                         android:background="@color/black"/>
 
                     <LinearLayout
+                        android:id="@+id/followerAreaLayout"
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:gravity="center"
@@ -137,6 +138,7 @@
                         android:layout_height="match_parent"
                         android:background="@color/black"/>
                     <LinearLayout
+                        android:id="@+id/followingAreaLayout"
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:gravity="center"

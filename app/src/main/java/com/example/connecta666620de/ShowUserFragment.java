@@ -6,6 +6,7 @@ import android.net.Uri;
 import android.os.Bundle;
 
 import androidx.annotation.NonNull;
+import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 
 import android.util.Log;
@@ -21,6 +22,7 @@ import com.bumptech.glide.Glide;
 import com.bumptech.glide.request.RequestOptions;
 import com.example.connecta666620de.model.Skill;
 import com.example.connecta666620de.utills.AndroidUtil;
+import com.google.android.material.button.MaterialButton;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.DataSnapshot;
@@ -28,12 +30,15 @@ import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.Query;
+import com.google.firebase.database.ServerValue;
 import com.google.firebase.database.ValueEventListener;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class ShowUserFragment extends Fragment {
 
@@ -46,13 +51,18 @@ public class ShowUserFragment extends Fragment {
     DatabaseReference databaseReference;
     TextView nameTv, usernameTv, bioTv, followersTv, followingTv, postsTv;
     ImageView avatarIv;
-    LinearLayout skillsContainer;
+    LinearLayout skillsContainer,followerArea, followingArea;
+
+    private MaterialButton connectBtn;
+    private boolean isFollowing = false;
 
     @Override
-    public void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-
-
+    public void onStart() {
+        super.onStart();
+        // Refresh follow status when fragment becomes visible
+        if (searchedUserUid != null && user != null) {
+            checkFollowingStatus();
+        }
     }
 
     @Override
@@ -77,6 +87,28 @@ public class ShowUserFragment extends Fragment {
         postsTv = view.findViewById(R.id.post_data_profile);
         skillsContainer = view.findViewById(R.id.skills_container);
 
+        followerArea = view.findViewById(R.id.followerAreaLayout);
+        followingArea = view.findViewById(R.id.followingAreaLayout);
+
+        // Initialize views
+        connectBtn = view.findViewById(R.id.connect_btn); // Make sure this ID exists in XML
+
+        // Check if current user is already following the searched user
+        checkFollowingStatus();
+
+        // Add click listeners for followers and following
+        followerArea.setOnClickListener(v -> openConnectionsList(searchedUserUid,"followers"));
+        followingArea.setOnClickListener(v -> openConnectionsList(searchedUserUid,"following"));
+
+        // Set click listener for "Connect" button
+        connectBtn.setOnClickListener(v -> {
+            if (isFollowing) {
+                unfollowUser();
+            } else {
+                followUser();
+            }
+        });
+
         if (getArguments() != null) {
             searchedUserUid = getArguments().getString("userId");
         }
@@ -86,6 +118,23 @@ public class ShowUserFragment extends Fragment {
 
         // Fetch user skills
         fetchUserSkills();
+
+        // Check if viewed profile is current user's profile
+        if (user != null && user.getUid().equals(searchedUserUid)) {
+            // Hide Connect and Message buttons for own profile
+            view.findViewById(R.id.connect_btn).setVisibility(View.GONE);
+            view.findViewById(R.id.message_btn).setVisibility(View.GONE);
+        } else {
+            // Set up follow functionality for other users
+            checkFollowingStatus();
+            connectBtn.setOnClickListener(v -> {
+                if (isFollowing) {
+                    unfollowUser();
+                } else {
+                    followUser();
+                }
+            });
+        }
 
         return view;
     }
@@ -101,9 +150,16 @@ public class ShowUserFragment extends Fragment {
                     String bio = "" + ds.child("bio").getValue();
                     String username = "" + ds.child("userName").getValue();
                     String profilePicUrl = "" + ds.child("image").getValue();
-                    String followers = "" + ds.child("follower").getValue();
-                    String following = "" + ds.child("following").getValue();
-                    String posts = "" + ds.child("posts").getValue();
+
+                    // SAFE NUMBER HANDLING:
+                    Long followersLong = ds.child("follower").getValue(Long.class);
+                    Long followingLong = ds.child("following").getValue(Long.class);
+                    Long postsLong = ds.child("posts").getValue(Long.class);
+
+                    String followers = followersLong != null ? String.valueOf(followersLong) : "0";
+                    String following = followingLong != null ? String.valueOf(followingLong) : "0";
+                    String posts = postsLong != null ? String.valueOf(postsLong) : "0";
+
 
                     Log.d("ProfilePic",profilePicUrl);
 
@@ -233,5 +289,140 @@ public class ShowUserFragment extends Fragment {
         }
     }
 
+    // Check if the current user is following the searched user
+    private void checkFollowingStatus() {
+        if (user == null || searchedUserUid == null) return;
 
+        DatabaseReference followingRef = FirebaseDatabase.getInstance()
+                .getReference("Connecta")
+                .child("UserConnections")
+                .child(user.getUid())
+                .child("following")
+                .child(searchedUserUid);
+
+        // to keep listening for changes
+        followingRef.addValueEventListener(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot snapshot) {
+                isFollowing = snapshot.exists();
+                updateConnectButton();
+
+                // Also update the counts when status changes
+                if (isFollowing) {
+                    fetchUpdatedFollowerCount(searchedUserUid);
+                }
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError error) {
+                Log.e("ShowUser", "Error checking follow status: " + error.getMessage());
+            }
+        });
+    }
+
+    // Update "Connect" button UI
+    private void updateConnectButton() {
+        if (isFollowing) {
+            connectBtn.setText("Connected");
+            connectBtn.setBackgroundColor(ContextCompat.getColor(requireContext(), R.color.connected_color));
+        } else {
+            connectBtn.setText("Connect");
+            connectBtn.setBackgroundColor(ContextCompat.getColor(requireContext(), R.color.connect_color));
+        }
+    }
+
+    private void followUser() {
+        if (user == null || searchedUserUid == null) return;
+
+        String currentUserId = user.getUid();
+        String targetUserId = searchedUserUid;
+
+        DatabaseReference rootRef = FirebaseDatabase.getInstance().getReference("Connecta");
+
+        // Atomic updates
+        Map<String, Object> updates = new HashMap<>();
+        updates.put("UserConnections/" + currentUserId + "/following/" + targetUserId, true);
+        updates.put("UserConnections/" + targetUserId + "/followers/" + currentUserId, true);
+        updates.put("ConnectaUsers/" + currentUserId + "/following", ServerValue.increment(1));
+        updates.put("ConnectaUsers/" + targetUserId + "/follower", ServerValue.increment(1));
+
+        rootRef.updateChildren(updates)
+                .addOnSuccessListener(aVoid -> {
+                    isFollowing = true;
+                    updateConnectButton();
+                    fetchUpdatedFollowerCount(targetUserId);  // Fetch updated count
+                })
+                .addOnFailureListener(e -> {
+                    Log.e("ShowUser", "Follow failed: " + e.getMessage());
+                });
+    }
+
+    private void unfollowUser() {
+        if (user == null || searchedUserUid == null) return;
+
+        String currentUserId = user.getUid();
+        String targetUserId = searchedUserUid;
+
+        DatabaseReference rootRef = FirebaseDatabase.getInstance().getReference("Connecta");
+
+        // Atomic updates
+        Map<String, Object> updates = new HashMap<>();
+        updates.put("UserConnections/" + currentUserId + "/following/" + targetUserId, null);
+        updates.put("UserConnections/" + targetUserId + "/followers/" + currentUserId, null);
+        updates.put("ConnectaUsers/" + currentUserId + "/following", ServerValue.increment(-1));
+        updates.put("ConnectaUsers/" + targetUserId + "/follower", ServerValue.increment(-1));
+
+        rootRef.updateChildren(updates)
+                .addOnSuccessListener(aVoid -> {
+                    isFollowing = false;
+                    updateConnectButton();
+                    fetchUpdatedFollowerCount(targetUserId);  // Fetch updated count
+                })
+                .addOnFailureListener(e -> {
+                    Log.e("ShowUser", "Unfollow failed: " + e.getMessage());
+                });
+    }
+
+    private void fetchUpdatedFollowerCount(String userId) {
+        DatabaseReference userRef = FirebaseDatabase.getInstance()
+                .getReference("Connecta")
+                .child("ConnectaUsers")
+                .child(userId);
+
+        userRef.addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot snapshot) {
+                Long followersCount = snapshot.child("follower").getValue(Long.class);
+                Long followingCount = snapshot.child("following").getValue(Long.class);
+
+                followersTv.setText(followersCount != null ? String.valueOf(followersCount) : "0");
+                followingTv.setText(followingCount != null ? String.valueOf(followingCount) : "0");
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError error) {
+                Log.e("ShowUser", "Error fetching updated counts: " + error.getMessage());
+            }
+        });
+    }
+
+    private void openConnectionsList(String userId, String connectionType) {
+        UserConnectionsFragment fragment = new UserConnectionsFragment();
+        Bundle args = new Bundle();
+        args.putString("userId", userId);
+        args.putString("connectionType", connectionType);
+        fragment.setArguments(args);
+
+        requireActivity().getSupportFragmentManager().beginTransaction()
+                .replace(R.id.main_frame_layout, fragment)
+                .addToBackStack(null)
+                .commit();
+    }
+
+
+    // Update displayed follower count
+    private void updateCounter(int change) {
+        int currentFollowers = Integer.parseInt(followersTv.getText().toString());
+        followersTv.setText(String.valueOf(currentFollowers + change));
+    }
 }

@@ -44,6 +44,7 @@ public class ProfileFragment extends Fragment {
 
     ImageView avatarIv, settingBtn;
     TextView nameTv, usernameTv, bioTv, followersTv, followingTv, postsTv;
+    LinearLayout followerArea, followingArea;
 
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
@@ -79,6 +80,9 @@ public class ProfileFragment extends Fragment {
         editSkillBtn = view.findViewById(R.id.edit_skills_button);
         skillsContainer = view.findViewById(R.id.skills_container);
 
+        followerArea = view.findViewById(R.id.followerAreaLayout);
+        followingArea = view.findViewById(R.id.followingAreaLayout);
+
         // Fetch user profile data
         fetchUserProfileData();
 
@@ -89,6 +93,10 @@ public class ProfileFragment extends Fragment {
         editSkillBtn.setOnClickListener(v -> openEditSkillsFragment());
 
         settingBtn.setOnClickListener(v -> openSettingFragment());
+
+        // Add click listeners for followers and following
+        followerArea.setOnClickListener(v -> openConnectionsList("followers"));
+        followingArea.setOnClickListener(v -> openConnectionsList("following"));
 
         // Load profile picture
         FireBaseUtill.getCurrentProfilePicStorageRef().getDownloadUrl().addOnCompleteListener(task -> {
@@ -231,5 +239,18 @@ public class ProfileFragment extends Fragment {
             default:
                 return Color.parseColor("#ADD8E6"); // Default to Light Blue
         }
+    }
+
+    private void openConnectionsList(String connectionType) {
+        UserConnectionsFragment fragment = new UserConnectionsFragment();
+        Bundle args = new Bundle();
+        args.putString("userId", user.getUid());
+        args.putString("connectionType", connectionType);
+        fragment.setArguments(args);
+
+        requireActivity().getSupportFragmentManager().beginTransaction()
+                .replace(R.id.main_frame_layout, fragment)
+                .addToBackStack(null)
+                .commit();
     }
 }

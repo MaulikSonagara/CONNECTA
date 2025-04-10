@@ -12,12 +12,12 @@ public class UserModel {
     private String bio;
     private String image;
 
-    private  String posts,follower,following;
+    private long posts, follower, following;  // Changed from String to long
 
     // Default constructor (required for Firebase)
     public UserModel() {}
 
-    public UserModel(String firstName, String uId, String lastName, String userName, String email, Timestamp createdAt, String bio, String image, String posts, String follower, String following) {
+    public UserModel(String firstName, String uId, String lastName, String userName, String email, Timestamp createdAt, String bio, String image, long posts, long follower, long following) {
         this.firstName = firstName;
         this.uId = uId;
         this.lastName = lastName;
@@ -40,27 +40,27 @@ public class UserModel {
         uId = uid;
     }
 
-    public String getPosts() {
+    public long getPosts() {
         return posts;
     }
 
-    public void setPosts(String posts) {
+    public void setPosts(long posts) {
         this.posts = posts;
     }
 
-    public String getFollower() {
+    public long getFollower() {
         return follower;
     }
 
-    public void setFollower(String follower) {
+    public void setFollower(long follower) {
         this.follower = follower;
     }
 
-    public String getFollowing() {
+    public long getFollowing() {
         return following;
     }
 
-    public void setFollowing(String following) {
+    public void setFollowing(long following) {
         this.following = following;
     }
 

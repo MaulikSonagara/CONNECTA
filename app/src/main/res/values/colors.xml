@@ -19,6 +19,10 @@
     <color name="navyBlue">#150578</color>
     <color name="mindaro">#DAFF7D</color>
 
+    <color name="connect_color">#4285F4</color>
+    <color name="connected_color">#34A853</color>
+    <color name="message_color">#EA4335</color>
+
     <color name="off_white">#FAFAFA</color>
     <color name="light_grey">#C3C3C3</color>
 
