@@ -1,6 +1,7 @@
 package com.example.connecta666620de;
 
 import android.os.Bundle;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -99,6 +100,9 @@ public class ActivityFragment extends Fragment {
             return;
         }
 
+        // Get current time minus 2 days in milliseconds
+        long twoDaysAgo = System.currentTimeMillis() - (2 * 24 * 60 * 60 * 1000);
+
         Query notificationsQuery = FirebaseDatabase.getInstance()
                 .getReference("Connecta/Notifications")
                 .child(currentUser.getUid())
@@ -117,6 +121,9 @@ public class ActivityFragment extends Fragment {
                         notificationList.add(0, notification); // Newest first
                     }
                 }
+
+                // Delete old notifications in background
+                deleteOldNotifications(twoDaysAgo);
 
                 updateEmptyState();
                 adapter.notifyDataSetChanged();
@@ -145,5 +152,28 @@ public class ActivityFragment extends Fragment {
                     .child(currentUser.getUid())
                     .removeEventListener(notificationsListener);
         }
+    }
+
+    private void deleteOldNotifications(long cutoffTime) {
+        if (currentUser == null) return;
+
+        FirebaseDatabase.getInstance()
+                .getReference("Connecta/Notifications")
+                .child(currentUser.getUid())
+                .orderByChild("timestamp")
+                .endAt(cutoffTime - 1) // All notifications older than cutoff
+                .addListenerForSingleValueEvent(new ValueEventListener() {
+                    @Override
+                    public void onDataChange(@NonNull DataSnapshot snapshot) {
+                        for (DataSnapshot ds : snapshot.getChildren()) {
+                            ds.getRef().removeValue(); // Delete old notification
+                        }
+                    }
+
+                    @Override
+                    public void onCancelled(@NonNull DatabaseError error) {
+                        Log.e("ActivityFragment", "Failed to delete old notifications: " + error.getMessage());
+                    }
+                });
     }
 }

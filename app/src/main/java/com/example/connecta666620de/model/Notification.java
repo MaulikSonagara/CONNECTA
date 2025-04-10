@@ -10,6 +10,7 @@ public class Notification {
     private String content;
     private String postId; // For post-related notifications
     private boolean isRead;
+    private long timestamp;
 
     private boolean isIncoming; // true for notifications from others, false for self-generated
 
@@ -17,6 +18,7 @@ public class Notification {
         // Required empty constructor for Firebase
     }
 
+    // Update constructor
     public Notification(String senderId, String receiverId, String type, String content, String postId) {
         this.senderId = senderId;
         this.receiverId = receiverId;
@@ -24,9 +26,19 @@ public class Notification {
         this.content = content;
         this.postId = postId;
         this.isRead = false;
+        this.timestamp = System.currentTimeMillis(); // Set current time
     }
 
     // Getters and setters
+    // Add getter and setter
+    public long getTimestamp() {
+        return timestamp;
+    }
+
+    public void setTimestamp(long timestamp) {
+        this.timestamp = timestamp;
+    }
+
     public String getNotificationId() { return notificationId; }
     public void setNotificationId(String notificationId) { this.notificationId = notificationId; }
     public String getSenderId() { return senderId; }

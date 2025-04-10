@@ -52,8 +52,8 @@ public class NotificationAdapter extends RecyclerView.Adapter<NotificationAdapte
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
         Notification notification = notificationList.get(position);
 
-        // Set time first since it doesn't depend on Firebase data
-
+        // Set time first
+        holder.timeTv.setText(getTimeAgo(notification.getTimestamp()));
 
         String userIdToFetch = notification.getType().equals("you_followed")
                 ? notification.getReceiverId()
@@ -114,7 +114,25 @@ public class NotificationAdapter extends RecyclerView.Adapter<NotificationAdapte
                 });
     }
 
+    private String getTimeAgo(long timestamp) {
+        long now = System.currentTimeMillis();
+        long diff = now - timestamp;
 
+        long seconds = diff / 1000;
+        long minutes = seconds / 60;
+        long hours = minutes / 60;
+        long days = hours / 24;
+
+        if (days > 0) {
+            return days + " day" + (days > 1 ? "s" : "") + " ago";
+        } else if (hours > 0) {
+            return hours + " hour" + (hours > 1 ? "s" : "") + " ago";
+        } else if (minutes > 0) {
+            return minutes + " min" + (minutes > 1 ? "s" : "") + " ago";
+        } else {
+            return "Just now";
+        }
+    }
 
     @Override
     public int getItemCount() {

@@ -32,11 +32,14 @@ public class NotificationUtil {
                 content,
                 null
         );
+        notification.setTimestamp(System.currentTimeMillis()); // Set current time
 
         notification.setIncoming(true);
         notification.setNotificationId(notificationId);
 
         notificationsRef.child(notificationId).setValue(notification);
+
+
     }
 
     public static void sendYouFollowedNotification(String senderId, String receiverId) {
@@ -57,6 +60,7 @@ public class NotificationUtil {
                 content,
                 null
         );
+        notification.setTimestamp(System.currentTimeMillis()); // Set current time
         notification.setNotificationId(notificationId);
 
         notificationsRef.child(notificationId).setValue(notification);
