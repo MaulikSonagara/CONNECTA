@@ -1,64 +1,149 @@
 package com.example.connecta666620de;
 
 import android.os.Bundle;
-
-import androidx.fragment.app.Fragment;
-
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.TextView;
 
-/**
- * A simple {@link Fragment} subclass.
- * Use the {@link ActivityFragment#newInstance} factory method to
- * create an instance of this fragment.
- */
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.fragment.app.Fragment;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
+import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
+
+import com.example.connecta666620de.adapters.NotificationAdapter;
+import com.example.connecta666620de.model.Notification;
+import com.example.connecta666620de.utills.AndroidUtil;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
+import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.Query;
+import com.google.firebase.database.ValueEventListener;
+
+import java.util.ArrayList;
+import java.util.List;
+
 public class ActivityFragment extends Fragment {
 
-    // TODO: Rename parameter arguments, choose names that match
-    // the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
-    private static final String ARG_PARAM1 = "param1";
-    private static final String ARG_PARAM2 = "param2";
-
-    // TODO: Rename and change types of parameters
-    private String mParam1;
-    private String mParam2;
-
-    public ActivityFragment() {
-        // Required empty public constructor
-    }
-
-    /**
-     * Use this factory method to create a new instance of
-     * this fragment using the provided parameters.
-     *
-     * @param param1 Parameter 1.
-     * @param param2 Parameter 2.
-     * @return A new instance of fragment ActivityFragment.
-     */
-    // TODO: Rename and change types and number of parameters
-    public static ActivityFragment newInstance(String param1, String param2) {
-        ActivityFragment fragment = new ActivityFragment();
-        Bundle args = new Bundle();
-        args.putString(ARG_PARAM1, param1);
-        args.putString(ARG_PARAM2, param2);
-        fragment.setArguments(args);
-        return fragment;
-    }
+    private RecyclerView recyclerView;
+    private NotificationAdapter adapter;
+    private List<Notification> notificationList;
+    private SwipeRefreshLayout swipeRefreshLayout;
+    private TextView emptyStateText;
+    private ValueEventListener notificationsListener;
+    private FirebaseUser currentUser;
 
     @Override
-    public void onCreate(Bundle savedInstanceState) {
+    public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        if (getArguments() != null) {
-            mParam1 = getArguments().getString(ARG_PARAM1);
-            mParam2 = getArguments().getString(ARG_PARAM2);
-        }
+        currentUser = FirebaseAuth.getInstance().getCurrentUser();
     }
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
-        // Inflate the layout for this fragment
-        return inflater.inflate(R.layout.fragment_activity, container, false);
+        View view = inflater.inflate(R.layout.fragment_activity, container, false);
+
+        initializeViews(view);
+        setupRecyclerView();
+        setupSwipeRefresh();
+        setupEmptyState();
+
+        return view;
+    }
+
+    @Override
+    public void onStart() {
+        super.onStart();
+        loadNotifications();
+    }
+
+    @Override
+    public void onStop() {
+        super.onStop();
+        removeNotificationsListener();
+    }
+
+    private void initializeViews(View view) {
+        recyclerView = view.findViewById(R.id.notifications_recycler_view);
+        swipeRefreshLayout = view.findViewById(R.id.swipe_refresh_layout);
+        emptyStateText = view.findViewById(R.id.empty_state_text);
+    }
+
+    private void setupRecyclerView() {
+        notificationList = new ArrayList<>();
+        adapter = new NotificationAdapter(getContext(), notificationList);
+        recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
+        recyclerView.setAdapter(adapter);
+    }
+
+    private void setupSwipeRefresh() {
+        swipeRefreshLayout.setOnRefreshListener(() -> {
+            loadNotifications();
+            swipeRefreshLayout.setRefreshing(false);
+        });
+    }
+
+    private void setupEmptyState() {
+        emptyStateText.setText("No notifications yet");
+        emptyStateText.setVisibility(View.GONE);
+    }
+
+    private void loadNotifications() {
+        if (currentUser == null) {
+            AndroidUtil.showToast(getContext(), "Please sign in to view notifications");
+            return;
+        }
+
+        Query notificationsQuery = FirebaseDatabase.getInstance()
+                .getReference("Connecta/Notifications")
+                .child(currentUser.getUid())
+                .orderByChild("timestamp");
+
+        removeNotificationsListener();
+
+        notificationsListener = new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot snapshot) {
+                notificationList.clear();
+                for (DataSnapshot ds : snapshot.getChildren()) {
+                    Notification notification = ds.getValue(Notification.class);
+                    if (notification != null) {
+                        notification.setNotificationId(ds.getKey());
+                        notificationList.add(0, notification); // Newest first
+                    }
+                }
+
+                updateEmptyState();
+                adapter.notifyDataSetChanged();
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError error) {
+                AndroidUtil.showToast(getContext(), "Failed to load notifications");
+                updateEmptyState();
+            }
+        };
+
+        notificationsQuery.addValueEventListener(notificationsListener);
+    }
+
+    private void updateEmptyState() {
+        if (emptyStateText != null) {
+            emptyStateText.setVisibility(notificationList.isEmpty() ? View.VISIBLE : View.GONE);
+        }
+    }
+
+    private void removeNotificationsListener() {
+        if (notificationsListener != null && currentUser != null) {
+            FirebaseDatabase.getInstance()
+                    .getReference("Connecta/Notifications")
+                    .child(currentUser.getUid())
+                    .removeEventListener(notificationsListener);
+        }
     }
 }

@@ -22,6 +22,7 @@ import com.bumptech.glide.Glide;
 import com.bumptech.glide.request.RequestOptions;
 import com.example.connecta666620de.model.Skill;
 import com.example.connecta666620de.utills.AndroidUtil;
+import com.example.connecta666620de.utills.NotificationUtil;
 import com.google.android.material.button.MaterialButton;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
@@ -162,7 +163,6 @@ public class ShowUserFragment extends Fragment {
 
 
                     Log.d("ProfilePic",profilePicUrl);
-
                     if (profilePicUrl != null && !profilePicUrl.isEmpty()) {
                         if (profilePicUrl.startsWith("gs://")) {
                             FirebaseStorage storage = FirebaseStorage.getInstance();
@@ -351,10 +351,16 @@ public class ShowUserFragment extends Fragment {
                     isFollowing = true;
                     updateConnectButton();
                     fetchUpdatedFollowerCount(targetUserId);  // Fetch updated count
+
+                    // Send both notifications
+                    NotificationUtil.sendFollowNotification(currentUserId, targetUserId); // To the followed user
+                    NotificationUtil.sendYouFollowedNotification(currentUserId, targetUserId); // To the current user
                 })
                 .addOnFailureListener(e -> {
                     Log.e("ShowUser", "Follow failed: " + e.getMessage());
                 });
+
+
     }
 
     private void unfollowUser() {

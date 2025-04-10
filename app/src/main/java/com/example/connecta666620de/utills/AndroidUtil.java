@@ -27,4 +27,26 @@ public class AndroidUtil {
                 .error(R.drawable.person_icon);
     }
 
+    public static String formatTimestamp(long timestamp) {
+        long now = System.currentTimeMillis();
+        long diff = now - timestamp;
+
+        long seconds = diff / 1000;
+        long minutes = seconds / 60;
+        long hours = minutes / 60;
+        long days = hours / 24;
+
+        if (days > 0) {
+            return days + " day" + (days > 1 ? "s" : "") + " ago";
+        } else if (hours > 0) {
+            return hours + " hour" + (hours > 1 ? "s" : "") + " ago";
+        } else if (minutes > 0) {
+            return minutes + " minute" + (minutes > 1 ? "s" : "") + " ago";
+        } else if (seconds > 0) {
+            return seconds + " second" + (seconds > 1 ? "s" : "") + " ago";
+        } else {
+            return "Just now";
+        }
+    }
+
 }
