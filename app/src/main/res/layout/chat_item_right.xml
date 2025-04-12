@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:padding="8dp">
+
+    <RelativeLayout
+        android:layout_width="300dp"
+        android:layout_height="wrap_content"
+        android:layout_alignParentEnd="true"
+        android:layout_alignParentRight="true">
+
+        <!-- Message Bubble -->
+        <TextView
+            android:id="@+id/show_message"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentEnd="true"
+            android:layout_alignParentRight="true"
+            android:background="@drawable/background_right"
+            android:text="hello"
+            android:textColor="#fff"
+            android:textSize="16sp"
+            android:padding="6dp"
+            android:layout_marginEnd="28dp"/>
+
+        <!-- Time Below Message -->
+        <TextView
+            android:id="@+id/msgTime"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="9:10 am"
+            android:textSize="10sp"
+            android:layout_below="@id/show_message"
+            android:layout_alignEnd="@id/show_message"
+            android:layout_marginTop="1dp"/>
+
+        <!-- Profile Image aligned bottom to message -->
+        <ImageView
+            android:id="@+id/profile_image"
+            android:layout_width="25dp"
+            android:layout_height="25dp"
+            android:src="@drawable/person_icon"
+            android:layout_alignParentEnd="true"
+            android:layout_alignBottom="@id/show_message"
+            />
+    </RelativeLayout>
+</RelativeLayout>

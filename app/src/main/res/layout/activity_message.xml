@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/main"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:fitsSystemWindows="true"
+    tools:context=".MessageActivity">
+
+    <!-- User Profile Card -->
+    <androidx.cardview.widget.CardView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        app:cardElevation="6dp"
+        app:cardBackgroundColor="?attr/colorSurfaceVariant"
+        android:radius="12dp">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:padding="8dp"
+            android:gravity="center_vertical">
+
+            <ImageView
+                android:id="@+id/backBtn"
+                android:layout_width="30dp"
+                android:layout_height="30dp"
+                android:src="@drawable/back_icon"/>
+
+            <com.google.android.material.imageview.ShapeableImageView
+                android:id="@+id/profileimage"
+                android:layout_width="45dp"
+                android:layout_height="45dp"
+                android:src="@drawable/person_icon"
+                app:shapeAppearanceOverlay="@style/ShapeAppearance.Material3.SmallComponent"
+                android:contentDescription="Profile Photo"/>
+
+            <TextView
+                android:id="@+id/uname_profile"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Username"
+                android:textSize="15sp"
+                android:textColor="?android:attr/textColorPrimary"
+                android:paddingStart="12dp"/>
+        </LinearLayout>
+    </androidx.cardview.widget.CardView>
+
+    <!-- Chat Messages List -->
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/messageList"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:padding="8dp"
+        android:scrollbars="vertical"/>
+
+    <!-- Message Input Section -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:background="?attr/colorSurfaceVariant"
+        android:padding="8dp"
+        android:elevation="4dp"
+        android:layout_gravity="center"
+        android:gravity="center_vertical">
+
+        <com.google.android.material.textfield.TextInputLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginEnd="5dp"
+            android:hint="Message">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/messageInput"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textColor="?android:attr/textColorPrimary"
+                android:maxLines="4"/>
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <ImageButton
+            android:id="@+id/sendMessageButton"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:src="@drawable/ic_send"
+            android:layout_gravity="center"
+            />
+    </LinearLayout>
+
+</LinearLayout>

@@ -1,8 +1,7 @@
 package com.example.connecta666620de;
 
-import android.app.ProgressDialog;
+import android.content.Intent;
 import android.graphics.Color;
-import android.net.Uri;
 import android.os.Bundle;
 
 import androidx.annotation.NonNull;
@@ -54,7 +53,7 @@ public class ShowUserFragment extends Fragment {
     ImageView avatarIv;
     LinearLayout skillsContainer,followerArea, followingArea;
 
-    private MaterialButton connectBtn;
+    private MaterialButton connectBtn, messageBtn;
     private boolean isFollowing = false;
 
     @Override
@@ -93,6 +92,14 @@ public class ShowUserFragment extends Fragment {
 
         // Initialize views
         connectBtn = view.findViewById(R.id.connect_btn); // Make sure this ID exists in XML
+        messageBtn = view.findViewById(R.id.message_btn); // Make sure this ID exists in XML
+
+
+        messageBtn.setOnClickListener(v ->{
+            Intent intent = new Intent(getContext(), MessageActivity.class);
+            intent.putExtra("userID",searchedUserUid);
+            startActivity(intent);
+        });
 
         // Check if current user is already following the searched user
         checkFollowingStatus();
@@ -207,7 +214,7 @@ public class ShowUserFragment extends Fragment {
 
             @Override
             public void onCancelled(@NonNull DatabaseError error) {
-                    Log.e("ProfileFragment", "Failed to load profile data: " + error.getMessage());
+                Log.e("ProfileFragment", "Failed to load profile data: " + error.getMessage());
             }
         });
     }
@@ -424,6 +431,8 @@ public class ShowUserFragment extends Fragment {
                 .addToBackStack(null)
                 .commit();
     }
+
+
 
 
     // Update displayed follower count
