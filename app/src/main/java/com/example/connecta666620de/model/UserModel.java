@@ -12,6 +12,9 @@ public class UserModel {
     private String bio;
     private String image;
 
+    private String lastMessage;
+    private long timestamp;
+
     private long posts, follower, following;  // Changed from String to long
 
     // Default constructor (required for Firebase)
@@ -84,4 +87,21 @@ public class UserModel {
 
     public String getImage() { return image; }
     public void setImage(String image) { this.image = image; }
+
+    // Add these getters and setters
+    public String getLastMessage() {
+        return lastMessage;
+    }
+
+    public void setLastMessage(String lastMessage) {
+        this.lastMessage = lastMessage;
+    }
+
+    public long getTimestamp() {
+        return timestamp;
+    }
+
+    public void setTimestamp(long timestamp) {
+        this.timestamp = timestamp;
+    }
 }

@@ -3,18 +3,16 @@ package com.example.connecta666620de;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
-import android.view.LayoutInflater;
 import android.view.View;
-import android.view.ViewGroup;
 import android.widget.TextView;
 
+import androidx.activity.EdgeToEdge;
 import androidx.annotation.NonNull;
-import androidx.fragment.app.Fragment;
+import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.connecta666620de.adapters.AdapterChatlist;
-import com.example.connecta666620de.model.Chat;
 import com.example.connecta666620de.model.Chatlist;
 import com.example.connecta666620de.model.UserModel;
 import com.google.android.material.textfield.TextInputEditText;
@@ -30,7 +28,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-public class ChatFragment extends Fragment {
+public class ChatListActivity extends AppCompatActivity {
 
     private RecyclerView recyclerView;
     private List<UserModel> userList;
@@ -41,23 +39,24 @@ public class ChatFragment extends Fragment {
     private TextInputEditText searchEt;
     private TextView emptyTv;
 
-    public ChatFragment() {
+    public ChatListActivity() {
         // Required empty public constructor
     }
 
     @Override
-    public View onCreateView(LayoutInflater inflater, ViewGroup container,
-                             Bundle savedInstanceState) {
-        View view = inflater.inflate(R.layout.fragment_chat, container, false);
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        EdgeToEdge.enable(this);
+        setContentView(R.layout.activity_chat_list);
 
         // Initialize views
-        recyclerView = view.findViewById(R.id.chatsRv);
-        searchEt = view.findViewById(R.id.searchEt);
-        emptyTv = view.findViewById(R.id.emptyTv);
+        recyclerView = findViewById(R.id.chatsRv);
+        searchEt = findViewById(R.id.searchEt);
+        emptyTv = findViewById(R.id.emptyTv);
 
         // Setup RecyclerView
         recyclerView.setHasFixedSize(true);
-        recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
+        recyclerView.setLayoutManager(new LinearLayoutManager(getApplicationContext()));
 
         currentUser = FirebaseAuth.getInstance().getCurrentUser();
         chatlistList = new ArrayList<>();
@@ -96,8 +95,8 @@ public class ChatFragment extends Fragment {
             public void afterTextChanged(Editable s) {}
         });
 
-        return view;
     }
+
 
     private void loadChats() {
         userList.clear();
@@ -129,7 +128,7 @@ public class ChatFragment extends Fragment {
                 } else {
                     emptyTv.setVisibility(View.GONE);
                     recyclerView.setVisibility(View.VISIBLE);
-                    adapterChatlist = new AdapterChatlist(getContext(), userList);
+                    adapterChatlist = new AdapterChatlist(getApplicationContext(), userList);
                     recyclerView.setAdapter(adapterChatlist);
                 }
             }

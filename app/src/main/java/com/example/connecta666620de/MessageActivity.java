@@ -6,14 +6,12 @@ import android.util.Log;
 import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ImageView;
-import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.view.ViewCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -21,6 +19,7 @@ import com.bumptech.glide.Glide;
 import com.bumptech.glide.request.RequestOptions;
 import com.example.connecta666620de.adapters.MessageAdapter;
 import com.example.connecta666620de.model.Chat;
+import com.example.connecta666620de.model.Chatlist;
 import com.example.connecta666620de.utills.AndroidUtil;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
@@ -188,18 +187,21 @@ public class MessageActivity extends AppCompatActivity {
 
     public void sendMessage(String sender, String receiver, String message) {
         DatabaseReference reference = FirebaseDatabase.getInstance().getReference();
-
-        long timestamp = System.currentTimeMillis(); // Get the current time in milliseconds
+        long timestamp = System.currentTimeMillis();
 
         HashMap<String, Object> hashMap = new HashMap<>();
         hashMap.put("sender", sender);
         hashMap.put("receiver", receiver);
         hashMap.put("message", message);
-        hashMap.put("timestamp", timestamp); // Store the timestamp
+        hashMap.put("timestamp", timestamp);
 
         String chatId = sender.compareTo(receiver) < 0 ? sender + "_" + receiver : receiver + "_" + sender;
 
-        reference.child("Connecta").child("Chat").child(chatId).push().setValue(hashMap);
+        reference.child("Connecta").child("Chat").child(chatId).push().setValue(hashMap)
+                .addOnSuccessListener(aVoid -> {
+                    // Update chatlist for both users
+                    updateChatlist(sender, receiver, message);
+                });
     }
 
     private void readMessage(final String myid, final String userid, final String senderImageUrl, final String receiverImageUrl) {
@@ -235,6 +237,26 @@ public class MessageActivity extends AppCompatActivity {
             @Override
             public void onCancelled(@NonNull DatabaseError error) { }
         });
+    }
+
+    private void updateChatlist(String sender, String receiver, String message) {
+        DatabaseReference chatlistRef = FirebaseDatabase.getInstance()
+                .getReference("Connecta")
+                .child("Chatlist");
+
+        long timestamp = System.currentTimeMillis();
+
+        // Update sender's chatlist
+        Chatlist senderChatlist = new Chatlist(receiver, timestamp, message);
+        chatlistRef.child(sender)
+                .child(receiver)
+                .setValue(senderChatlist);
+
+        // Update receiver's chatlist
+        Chatlist receiverChatlist = new Chatlist(sender, timestamp, message);
+        chatlistRef.child(receiver)
+                .child(sender)
+                .setValue(receiverChatlist);
     }
 
     private String formatDate(long timestamp) {

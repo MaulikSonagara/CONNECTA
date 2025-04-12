@@ -432,9 +432,6 @@ public class ShowUserFragment extends Fragment {
                 .commit();
     }
 
-
-
-
     // Update displayed follower count
     private void updateCounter(int change) {
         int currentFollowers = Integer.parseInt(followersTv.getText().toString());
