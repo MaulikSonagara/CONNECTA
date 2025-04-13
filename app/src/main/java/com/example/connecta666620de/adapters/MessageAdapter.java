@@ -23,12 +23,14 @@ import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 
 public class MessageAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
 
     private static final int VIEW_TYPE_DATE = 0;
     private static final int VIEW_TYPE_LEFT = 1;
     private static final int VIEW_TYPE_RIGHT = 2;
+
 
     private Context mContext;
     private String senderImageUrl;
@@ -60,7 +62,7 @@ public class MessageAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
             return VIEW_TYPE_DATE;
         } else {
             Chat chat = (Chat) item;
-            String currentUserId = FirebaseAuth.getInstance().getCurrentUser().getUid();
+            String currentUserId = Objects.requireNonNull(FirebaseAuth.getInstance().getCurrentUser()).getUid();
             return chat.getSender().equals(currentUserId) ? VIEW_TYPE_RIGHT : VIEW_TYPE_LEFT;
         }
     }

@@ -73,7 +73,9 @@
                         android:text="Online"
                         android:textSize="12sp"
                         android:textColor="?android:attr/textColorSecondary"
-                        android:layout_marginTop="4dp"/>
+                        android:layout_marginTop="4dp"
+                        android:visibility="gone"
+                        />
                 </LinearLayout>
             </LinearLayout>
         </LinearLayout>
@@ -104,6 +106,7 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:layout_marginEnd="8dp"
+            app:endIconMode="clear_text"
             >
 
             <com.google.android.material.textfield.TextInputEditText
@@ -112,6 +115,8 @@
                 android:layout_height="wrap_content"
                 android:textColor="?android:attr/textColorPrimary"
                 android:maxLines="4"
+                android:imeOptions="actionSend"
+                android:inputType="textCapSentences|textMultiLine"
                 android:hint="Enter message here..."/>
         </com.google.android.material.textfield.TextInputLayout>
 
@@ -121,7 +126,11 @@
             android:layout_height="50dp"
             android:src="@drawable/ic_send"
             android:layout_gravity="center"
-            android:contentDescription="Send message"/>
+            android:background="?selectableItemBackgroundBorderless"
+            android:padding="10dp"
+            android:contentDescription="Send"
+
+            />
     </LinearLayout>
 
 </LinearLayout>

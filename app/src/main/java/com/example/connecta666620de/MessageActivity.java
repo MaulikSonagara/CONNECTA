@@ -2,7 +2,11 @@ package com.example.connecta666620de;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.os.Handler;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.util.Log;
+import android.view.View;
 import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ImageView;
@@ -57,6 +61,12 @@ public class MessageActivity extends AppCompatActivity {
     RecyclerView recyclerView;
     MessageAdapter messageAdapter;
     List<Chat> mChat;
+    String currentUserId;
+    String chatId;
+    TextView statusTextTv;
+    // Add these class variables at the top
+    private Handler typingHandler = new Handler();
+    private static final long TYPING_TIMEOUT = 500; // 1 second delay after typing stops
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -75,14 +85,14 @@ public class MessageActivity extends AppCompatActivity {
         userNameTv = findViewById(R.id.uname_profile);
         sendMsgbtn = findViewById(R.id.sendMessageButton);
         msgInputEt = findViewById(R.id.messageInput);
+        statusTextTv = findViewById(R.id.statusText);
 
         // Initialize Firebase
+        currentUserId = FirebaseAuth.getInstance().getCurrentUser().getUid();
         firebaseAuth = FirebaseAuth.getInstance();
         firebaseDatabase = FirebaseDatabase.getInstance(); // FIXED: Initialize FirebaseDatabase
         user = firebaseAuth.getCurrentUser();
         databaseReference = firebaseDatabase.getReference("Connecta").child("ConnectaUsers");
-
-
 
         Intent intent = getIntent();
         searchedUserUid = intent.getStringExtra("userID");
@@ -102,6 +112,83 @@ public class MessageActivity extends AppCompatActivity {
                 AndroidUtil.showToast(getApplicationContext(),"Message is empty");
             }
             msgInputEt.setText("");
+        });
+
+        // Inside onCreate(), after initializing msgInputEt
+        msgInputEt.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+
+                chatId = user.getUid().compareTo(searchedUserUid) < 0 ? user.getUid() + "_" + searchedUserUid : searchedUserUid + "_" + user.getUid();
+                DatabaseReference statusRef = FirebaseDatabase.getInstance().getReference("Connecta").child("userChatStatus").child(chatId);
+                statusRef.child(user.getUid()).setValue("Typing...");
+
+
+                // Remove any pending callbacks
+                typingHandler.removeCallbacks(typingStoppedRunnable);
+
+                // Post delayed callback to detect when typing stops
+                typingHandler.postDelayed(typingStoppedRunnable, TYPING_TIMEOUT);
+            }
+
+            @Override
+            public void afterTextChanged(Editable s) {}
+        });
+
+    }
+
+    // Add this Runnable as a class variable
+    private Runnable typingStoppedRunnable = new Runnable() {
+        @Override
+        public void run() {
+            // User stopped typing
+            chatId = user.getUid().compareTo(searchedUserUid) < 0 ? user.getUid() + "_" + searchedUserUid : searchedUserUid + "_" + user.getUid();
+            DatabaseReference statusRef = FirebaseDatabase.getInstance().getReference("Connecta").child("userChatStatus").child(chatId);
+            statusRef.child(user.getUid()).setValue("Online");
+        }
+    };
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        chatId = user.getUid().compareTo(searchedUserUid) < 0 ? user.getUid() + "_" + searchedUserUid : searchedUserUid + "_" + user.getUid();
+        DatabaseReference statusRef = FirebaseDatabase.getInstance().getReference("Connecta").child("userChatStatus").child(chatId);
+        statusRef.child(user.getUid()).setValue("offline");
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        chatId = user.getUid().compareTo(searchedUserUid) < 0 ? user.getUid() + "_" + searchedUserUid : searchedUserUid + "_" + user.getUid();
+        DatabaseReference statusRef = FirebaseDatabase.getInstance().getReference("Connecta").child("userChatStatus").child(chatId);
+        statusRef.child(user.getUid()).setValue("online");
+
+        statusRef.child(searchedUserUid).addValueEventListener(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot snapshot) {
+                String status = snapshot.getValue(String.class);
+                if (status != null) {
+                    statusTextTv.setVisibility(View.VISIBLE);
+
+                    if ("Typing...".equals(status)) {
+                        statusTextTv.setText("Typing...");
+                    }
+                    else if ("online".equalsIgnoreCase(status)) {
+                        statusTextTv.setText("Online");
+                    }
+                    else {
+                        statusTextTv.setVisibility(View.GONE);
+                    }
+                } else {
+                    statusTextTv.setVisibility(View.GONE);
+                }
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError error) { }
         });
     }
 
