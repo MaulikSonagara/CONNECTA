@@ -65,5 +65,8 @@ dependencies {
     implementation ("com.google.android.libraries.identity.googleid:googleid:1.1.1")
 
 
+    implementation ("androidx.cardview:cardview:1.0.0")
+
+
 
 }

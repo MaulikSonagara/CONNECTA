@@ -7,6 +7,7 @@ import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
 
+import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.bumptech.glide.Glide;
@@ -98,6 +99,32 @@ public class MessageAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
             String currentUserId = FirebaseAuth.getInstance().getCurrentUser().getUid();
             String profileUrlToUse = chat.getSender().equals(currentUserId) ? senderImageUrl : receiverImageUrl;
 
+            // Show status only for sent messages (right side)
+            // In MessageAdapter's onBindViewHolder
+            if (chat.getSender().equals(currentUserId)) {
+                TextView seenStatus = msgHolder.itemView.findViewById(R.id.seen_status);
+                if (chat.getStatus() != null) {
+                    switch (chat.getStatus()) {
+                        case "seen":
+                            seenStatus.setText(" • Seen");
+                            seenStatus.setVisibility(View.VISIBLE);
+                            seenStatus.setTextColor(ContextCompat.getColor(mContext, R.color.seen_color));
+                            break;
+                        case "delivered":
+                            seenStatus.setText(" • Delivered");
+                            seenStatus.setVisibility(View.VISIBLE);
+                            seenStatus.setTextColor(ContextCompat.getColor(mContext, R.color.delivered_color));
+                            break;
+                        case "sent":
+                            seenStatus.setText(" • Sent");
+                            seenStatus.setVisibility(View.VISIBLE);
+                            seenStatus.setTextColor(ContextCompat.getColor(mContext, R.color.sent_color));
+                            break;
+                        default:
+                            seenStatus.setVisibility(View.GONE);
+                    }
+                }
+            }
             if (profileUrlToUse == null || profileUrlToUse.equals("default")) {
                 msgHolder.profileImage.setImageResource(R.drawable.person_icon);
             } else {

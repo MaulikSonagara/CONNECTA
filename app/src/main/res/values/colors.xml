@@ -20,6 +20,10 @@
     <color name="mindaro">#DAFF7D</color>
     <color name="moonstone">#33A4AF</color>
 
+    <color name="seen_color">#03DAC5</color>
+    <color name="delivered_color">#888888</color>
+    <color name="sent_color">#888888</color>
+
 
     <color name="connect_color">#4285F4</color>
     <color name="connected_color">#34A853</color>
