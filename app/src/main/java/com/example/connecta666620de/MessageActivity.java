@@ -160,24 +160,11 @@ public class MessageActivity extends AppCompatActivity {
     }
 
     @Override
-    protected void onDestroy() {
-        super.onDestroy();
-        chatId = user.getUid().compareTo(searchedUserUid) < 0 ? user.getUid() + "_" + searchedUserUid : searchedUserUid + "_" + user.getUid();
-        DatabaseReference statusRef = FirebaseDatabase.getInstance().getReference("Connecta").child("userChatStatus").child(chatId);
-        statusRef.child(user.getUid()).setValue("offline");
-    }
-
-    @Override
     protected void onResume() {
         super.onResume();
         chatId = user.getUid().compareTo(searchedUserUid) < 0 ? user.getUid() + "_" + searchedUserUid : searchedUserUid + "_" + user.getUid();
         DatabaseReference statusRef = FirebaseDatabase.getInstance().getReference("Connecta").child("userChatStatus").child(chatId);
         statusRef.child(user.getUid()).setValue("online");
-
-        // Mark messages as seen when opening chat
-        if (chatId != null) {
-            markMessagesAsSeen(chatId);
-        }
 
         statusRef.child(searchedUserUid).addValueEventListener(new ValueEventListener() {
             @Override
@@ -202,27 +189,6 @@ public class MessageActivity extends AppCompatActivity {
 
             @Override
             public void onCancelled(@NonNull DatabaseError error) { }
-        });
-
-        // Add this listener for real-time seen updates
-        DatabaseReference statusRef2 = FirebaseDatabase.getInstance()
-                .getReference("Connecta")
-                .child("userChatStatus")
-                .child(chatId)
-                .child(searchedUserUid);
-
-        statusRef2.addValueEventListener(new ValueEventListener() {
-            @Override
-            public void onDataChange(@NonNull DataSnapshot snapshot) {
-                String status = snapshot.getValue(String.class);
-                if (status != null && (status.equals("online") || status.equals("Typing..."))) {
-                    // If receiver is online or typing, mark messages as seen
-                    markMessagesAsSeen(chatId);
-                }
-            }
-
-            @Override
-            public void onCancelled(@NonNull DatabaseError error) {}
         });
     }
 
@@ -316,67 +282,13 @@ public class MessageActivity extends AppCompatActivity {
         hashMap.put("message", message);
         hashMap.put("timestamp", timestamp);
 
-        // Check if receiver is online before setting initial status
-        DatabaseReference receiverStatusRef = FirebaseDatabase.getInstance()
-                .getReference("Connecta")
-                .child("userChatStatus")
-                .child(chatId)
-                .child(receiver);
+        String chatId = sender.compareTo(receiver) < 0 ? sender + "_" + receiver : receiver + "_" + sender;
 
-        receiverStatusRef.addListenerForSingleValueEvent(new ValueEventListener() {
-            @Override
-            public void onDataChange(@NonNull DataSnapshot snapshot) {
-                String status = snapshot.getValue(String.class);
-                String initialStatus = (status != null && (status.equals("online") || status.equals("Typing...")))
-                        ? "seen"
-                        : "sent";
-
-                hashMap.put("status", initialStatus);
-
-                DatabaseReference messageRef = reference.child("Connecta").child("Chat").child(chatId).push();
-                messageRef.setValue(hashMap)
-                        .addOnSuccessListener(aVoid -> {
-                            updateChatlist(sender, receiver, message);
-                            if (!initialStatus.equals("seen")) {
-                                messageRef.child("status").setValue("delivered");
-                            }
-                        });
-            }
-
-            @Override
-            public void onCancelled(@NonNull DatabaseError error) {
-                // Default to sent status if there's an error checking status
-                hashMap.put("status", "sent");
-                DatabaseReference messageRef = reference.child("Connecta").child("Chat").child(chatId).push();
-                messageRef.setValue(hashMap)
-                        .addOnSuccessListener(aVoid -> {
-                            updateChatlist(sender, receiver, message);
-                            messageRef.child("status").setValue("delivered");
-                        });
-            }
-        });
-    }
-
-    private void markMessagesAsSeen(String chatId) {
-        DatabaseReference chatRef = FirebaseDatabase.getInstance()
-                .getReference("Connecta")
-                .child("Chat")
-                .child(chatId);
-
-        chatRef.orderByChild("sender").equalTo(user.getUid()).addListenerForSingleValueEvent(new ValueEventListener() {
-            @Override
-            public void onDataChange(@NonNull DataSnapshot snapshot) {
-                for (DataSnapshot messageSnapshot : snapshot.getChildren()) {
-                    String status = messageSnapshot.child("status").getValue(String.class);
-                    if (status != null && status.equals("delivered")) {
-                        messageSnapshot.getRef().child("status").setValue("seen");
-                    }
-                }
-            }
-
-            @Override
-            public void onCancelled(@NonNull DatabaseError error) {}
-        });
+        reference.child("Connecta").child("Chat").child(chatId).push().setValue(hashMap)
+                .addOnSuccessListener(aVoid -> {
+                    // Update chatlist for both users
+                    updateChatlist(sender, receiver, message);
+                });
     }
 
     private void readMessage(final String myid, final String userid, final String senderImageUrl, final String receiverImageUrl) {
@@ -439,4 +351,8 @@ public class MessageActivity extends AppCompatActivity {
         return dateFormat.format(new Date(timestamp));
     }
 
+    private String formatTime(long timestamp) {
+        SimpleDateFormat timeFormat = new SimpleDateFormat("hh:mm a", Locale.getDefault());
+        return timeFormat.format(new Date(timestamp));
+    }
 }

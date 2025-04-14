@@ -5,7 +5,6 @@ public class Chat {
     private String receiver;
     private String message;
     private long timestamp; // Add this field to store the message timestamp
-    private String status; // "sent", "delivered", "seen"
 
     public Chat() {
         // Default constructor
@@ -16,7 +15,6 @@ public class Chat {
         this.receiver = receiver;
         this.message = message;
         this.timestamp = timestamp;
-
     }
 
     // Getters and Setters
@@ -51,13 +49,5 @@ public class Chat {
 
     public void setTimestamp(long timestamp) {
         this.timestamp = timestamp;
-    }
-
-    public String getStatus() {
-        return status;
-    }
-
-    public void setStatus(String status) {
-        this.status = status;
     }
 }
