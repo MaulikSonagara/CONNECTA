@@ -46,7 +46,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
-public class MessageActivity extends AppCompatActivity {
+public class MessageActivity extends AppCompatActivity implements MessageAdapter.OnMessageDeleteListener, MessageAdapter.OnMessageReactListener {
 
     ImageView avatarIv;
     TextView userNameTv;
@@ -66,9 +66,8 @@ public class MessageActivity extends AppCompatActivity {
     String currentUserId;
     String chatId;
     TextView statusTextTv;
-    // Add these class variables at the top
     private Handler typingHandler = new Handler();
-    private static final long TYPING_TIMEOUT = 500; // 1 second delay after typing stops
+    private static final long TYPING_TIMEOUT = 500;
     DatabaseReference seenMessageReference;
     ValueEventListener seenListener;
     LinearLayout openProfileFromChat;
@@ -86,7 +85,6 @@ public class MessageActivity extends AppCompatActivity {
         linearLayoutManager.setStackFromEnd(true);
         recyclerView.setLayoutManager(linearLayoutManager);
 
-        // Initialize views
         avatarIv = findViewById(R.id.profileimage);
         userNameTv = findViewById(R.id.uname_profile);
         sendMsgbtn = findViewById(R.id.sendMessageButton);
@@ -94,10 +92,9 @@ public class MessageActivity extends AppCompatActivity {
         statusTextTv = findViewById(R.id.statusText);
         openProfileFromChat = findViewById(R.id.openProfileChatLayout);
 
-        // Initialize Firebase
         currentUserId = FirebaseAuth.getInstance().getCurrentUser().getUid();
         firebaseAuth = FirebaseAuth.getInstance();
-        firebaseDatabase = FirebaseDatabase.getInstance(); // FIXED: Initialize FirebaseDatabase
+        firebaseDatabase = FirebaseDatabase.getInstance();
         user = firebaseAuth.getCurrentUser();
         databaseReference = firebaseDatabase.getReference("Connecta").child("ConnectaUsers");
 
@@ -110,50 +107,41 @@ public class MessageActivity extends AppCompatActivity {
             fetchUserProfileData();
         } else {
             Toast.makeText(getApplicationContext(), "User ID not found", Toast.LENGTH_SHORT).show();
-            finish(); // Close activity if no user ID is provided
+            finish();
         }
 
         sendMsgbtn.setOnClickListener(v -> {
             String msg = msgInputEt.getText().toString();
-            if(!msg.equals("")){
-                sendMessage(user.getUid(),searchedUserUid,msg);
+            if (!msg.equals("")) {
+                sendMessage(user.getUid(), searchedUserUid, msg);
             } else {
-                AndroidUtil.showToast(getApplicationContext(),"Message is empty");
+                AndroidUtil.showToast(getApplicationContext(), "Message is empty");
             }
             msgInputEt.setText("");
         });
 
-        // Inside onCreate(), after initializing msgInputEt
         msgInputEt.addTextChangedListener(new TextWatcher() {
             @Override
             public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
 
             @Override
             public void onTextChanged(CharSequence s, int start, int before, int count) {
-
                 chatId = user.getUid().compareTo(searchedUserUid) < 0 ? user.getUid() + "_" + searchedUserUid : searchedUserUid + "_" + user.getUid();
                 DatabaseReference statusRef = FirebaseDatabase.getInstance().getReference("Connecta").child("userChatStatus").child(chatId);
                 statusRef.child(user.getUid()).setValue("Typing...");
 
-
-                // Remove any pending callbacks
                 typingHandler.removeCallbacks(typingStoppedRunnable);
-
-                // Post delayed callback to detect when typing stops
                 typingHandler.postDelayed(typingStoppedRunnable, TYPING_TIMEOUT);
             }
 
             @Override
             public void afterTextChanged(Editable s) {}
         });
-
     }
 
-    // Add this Runnable as a class variable
     private Runnable typingStoppedRunnable = new Runnable() {
         @Override
         public void run() {
-            // User stopped typing
             chatId = user.getUid().compareTo(searchedUserUid) < 0 ? user.getUid() + "_" + searchedUserUid : searchedUserUid + "_" + user.getUid();
             DatabaseReference statusRef = FirebaseDatabase.getInstance().getReference("Connecta").child("userChatStatus").child(chatId);
             statusRef.child(user.getUid()).setValue("Online");
@@ -167,7 +155,6 @@ public class MessageActivity extends AppCompatActivity {
         DatabaseReference statusRef = FirebaseDatabase.getInstance().getReference("Connecta").child("userChatStatus").child(chatId);
         statusRef.child(user.getUid()).setValue("offline");
 
-        // remove seenlistener
         if (seenListener != null) {
             seenMessageReference.removeEventListener(seenListener);
         }
@@ -189,11 +176,9 @@ public class MessageActivity extends AppCompatActivity {
 
                     if ("Typing...".equals(status)) {
                         statusTextTv.setText("Typing...");
-                    }
-                    else if ("online".equalsIgnoreCase(status)) {
+                    } else if ("online".equalsIgnoreCase(status)) {
                         statusTextTv.setText("Online");
-                    }
-                    else {
+                    } else {
                         statusTextTv.setVisibility(View.GONE);
                     }
                 } else {
@@ -202,7 +187,7 @@ public class MessageActivity extends AppCompatActivity {
             }
 
             @Override
-            public void onCancelled(@NonNull DatabaseError error) { }
+            public void onCancelled(@NonNull DatabaseError error) {}
         });
     }
 
@@ -222,7 +207,7 @@ public class MessageActivity extends AppCompatActivity {
                 String profilePicUrl = null;
                 for (DataSnapshot ds : snapshot.getChildren()) {
                     String username = ds.child("userName").getValue(String.class);
-                    profilePicUrl = ds.child("image").getValue(String.class); // Receiver image
+                    profilePicUrl = ds.child("image").getValue(String.class);
 
                     if (username != null) {
                         userNameTv.setText(username);
@@ -235,7 +220,6 @@ public class MessageActivity extends AppCompatActivity {
                     }
                 }
 
-                // Get current (sender) user image
                 DatabaseReference senderRef = FirebaseDatabase.getInstance().getReference("Connecta").child("ConnectaUsers").child(user.getUid());
                 String finalProfilePicUrl = profilePicUrl;
                 senderRef.addListenerForSingleValueEvent(new ValueEventListener() {
@@ -243,9 +227,9 @@ public class MessageActivity extends AppCompatActivity {
                     public void onDataChange(@NonNull DataSnapshot snapshot) {
                         currentUserImage[0] = snapshot.child("image").getValue(String.class);
 
-                        // Now call readMessage with both images
                         readMessage(user.getUid(), searchedUserUid, currentUserImage[0], finalProfilePicUrl);
                     }
+
                     @Override
                     public void onCancelled(@NonNull DatabaseError error) {
                         readMessage(user.getUid(), searchedUserUid, null, finalProfilePicUrl);
@@ -266,7 +250,7 @@ public class MessageActivity extends AppCompatActivity {
             StorageReference storageRef = storage.getReferenceFromUrl(profilePicUrl);
 
             storageRef.getDownloadUrl().addOnSuccessListener(uri -> {
-                Glide.with(MessageActivity.this) // FIXED: Use correct context
+                Glide.with(MessageActivity.this)
                         .load(uri.toString())
                         .apply(RequestOptions.circleCropTransform())
                         .placeholder(R.drawable.person_icon)
@@ -277,7 +261,7 @@ public class MessageActivity extends AppCompatActivity {
                 avatarIv.setImageResource(R.drawable.person_icon);
             });
         } else {
-            Glide.with(MessageActivity.this) // FIXED: Use correct context
+            Glide.with(MessageActivity.this)
                     .load(profilePicUrl)
                     .apply(RequestOptions.circleCropTransform())
                     .placeholder(R.drawable.person_icon)
@@ -305,9 +289,7 @@ public class MessageActivity extends AppCompatActivity {
             }
 
             @Override
-            public void onCancelled(@NonNull DatabaseError error) {
-
-            }
+            public void onCancelled(@NonNull DatabaseError error) {}
         });
     }
 
@@ -319,14 +301,17 @@ public class MessageActivity extends AppCompatActivity {
         hashMap.put("sender", sender);
         hashMap.put("receiver", receiver);
         hashMap.put("message", message);
-        hashMap.put("isseen",false);
+        hashMap.put("isseen", false);
         hashMap.put("timestamp", timestamp);
 
         String chatId = sender.compareTo(receiver) < 0 ? sender + "_" + receiver : receiver + "_" + sender;
 
-        reference.child("Connecta").child("Chat").child(chatId).push().setValue(hashMap)
+        DatabaseReference newMessageRef = reference.child("Connecta").child("Chat").child(chatId).push();
+        String messageId = newMessageRef.getKey();
+        hashMap.put("messageId", messageId);
+
+        newMessageRef.setValue(hashMap)
                 .addOnSuccessListener(aVoid -> {
-                    // Update chatlist for both users
                     updateChatlist(sender, receiver, message);
                 });
     }
@@ -345,8 +330,8 @@ public class MessageActivity extends AppCompatActivity {
 
                 for (DataSnapshot snapshot : dataSnapshot.getChildren()) {
                     Chat chat = snapshot.getValue(Chat.class);
-
                     if (chat != null) {
+                        chat.setMessageId(snapshot.getKey());
                         mChat.add(chat);
 
                         String dateKey = formatDate(chat.getTimestamp());
@@ -357,12 +342,12 @@ public class MessageActivity extends AppCompatActivity {
                     }
                 }
 
-                messageAdapter = new MessageAdapter(MessageActivity.this, groupedMessages, senderImageUrl, receiverImageUrl);
+                messageAdapter = new MessageAdapter(MessageActivity.this, groupedMessages, senderImageUrl, receiverImageUrl, MessageActivity.this, MessageActivity.this);
                 recyclerView.setAdapter(messageAdapter);
             }
 
             @Override
-            public void onCancelled(@NonNull DatabaseError error) { }
+            public void onCancelled(@NonNull DatabaseError error) {}
         });
     }
 
@@ -373,13 +358,11 @@ public class MessageActivity extends AppCompatActivity {
 
         long timestamp = System.currentTimeMillis();
 
-        // Update sender's chatlist
         Chatlist senderChatlist = new Chatlist(receiver, timestamp, message);
         chatlistRef.child(sender)
                 .child(receiver)
                 .setValue(senderChatlist);
 
-        // Update receiver's chatlist
         Chatlist receiverChatlist = new Chatlist(sender, timestamp, message);
         chatlistRef.child(receiver)
                 .child(sender)
@@ -391,4 +374,47 @@ public class MessageActivity extends AppCompatActivity {
         return dateFormat.format(new Date(timestamp));
     }
 
+    @Override
+    public void onMessageDelete(String messageId) {
+        String chatId = user.getUid().compareTo(searchedUserUid) < 0 ? user.getUid() + "_" + searchedUserUid : searchedUserUid + "_" + user.getUid();
+        DatabaseReference messageRef = FirebaseDatabase.getInstance().getReference("Connecta").child("Chat").child(chatId).child(messageId);
+        messageRef.removeValue()
+                .addOnSuccessListener(aVoid -> {
+                    Toast.makeText(this, "Message deleted", Toast.LENGTH_SHORT).show();
+                })
+                .addOnFailureListener(e -> {
+                    Toast.makeText(this, "Failed to delete message", Toast.LENGTH_SHORT).show();
+                });
+    }
+
+    @Override
+    public void onMessageReact(String messageId) {
+        String chatId = user.getUid().compareTo(searchedUserUid) < 0 ? user.getUid() + "_" + searchedUserUid : searchedUserUid + "_" + user.getUid();
+        DatabaseReference messageRef = FirebaseDatabase.getInstance().getReference("Connecta").child("Chat").child(chatId).child(messageId);
+
+        messageRef.addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot snapshot) {
+                Chat chat = snapshot.getValue(Chat.class);
+                if (chat != null) {
+                    Map<String, String> reactions = chat.getReactions();
+                    if (reactions == null) {
+                        reactions = new HashMap<>();
+                    }
+                    String currentUserId = FirebaseAuth.getInstance().getCurrentUser().getUid();
+                    String emoji = reactions.get(currentUserId);
+                    if (emoji == null || !emoji.equals("👍")) {
+                        reactions.put(currentUserId, "👍");
+                    } else {
+                        reactions.remove(currentUserId);
+                    }
+                    chat.setReactions(reactions);
+                    messageRef.setValue(chat);
+                }
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError error) {}
+        });
+    }
 }

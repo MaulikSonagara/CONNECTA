@@ -1,4 +1,5 @@
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="wrap_content"
     android:layout_height="wrap_content"
     android:padding="8dp">
@@ -26,25 +27,52 @@
         android:textSize="16sp"
         android:padding="8dp" />
 
-    <TextView
-        android:id="@+id/seen_status"
+    <!-- Time and Seen Status -->
+    <LinearLayout
+        android:id="@+id/statusLayout"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text=" • Seen"
-        android:textSize="11sp"
-        android:textColor="#03DAC5"
-        android:layout_marginStart="4dp"
-        android:visibility="gone"
-        />
-    <!-- Time Below -->
-    <TextView
-        android:id="@+id/msgTime"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
+        android:orientation="horizontal"
         android:layout_below="@id/show_message"
         android:layout_alignStart="@id/show_message"
-        android:text="9:10 AM"
-        android:textSize="10sp"
-        android:layout_marginTop="2dp"
-        />
+        android:layout_marginTop="2dp">
+
+        <TextView
+            android:id="@+id/msgTime"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="9:10 AM"
+            android:textSize="10sp"
+            android:textColor="#888888" />
+
+        <TextView
+            android:id="@+id/seen_status"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text=""
+            android:textSize="11sp"
+            android:textColor="#03DAC5"
+            android:layout_marginStart="4dp" />
+    </LinearLayout>
+
+    <!-- Reactions Layout -->
+    <LinearLayout
+        android:id="@+id/reactionsLayout"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_below="@id/statusLayout"
+        android:layout_alignStart="@id/show_message"
+        android:layout_marginTop="4dp" />
+
+    <!-- Reaction Button -->
+    <ImageButton
+        android:id="@+id/reactBtn"
+        android:layout_width="24dp"
+        android:layout_height="24dp"
+        android:src="@drawable/ic_react"
+        android:layout_below="@id/reactionsLayout"
+        android:layout_alignStart="@id/show_message"
+        android:layout_marginTop="4dp"
+        app:tint="@color/light_grey" />
 </RelativeLayout>

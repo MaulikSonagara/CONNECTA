@@ -1,13 +1,15 @@
 package com.example.connecta666620de.adapters;
 
 import android.content.Context;
-import android.opengl.Visibility;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageButton;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 
+import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.bumptech.glide.Glide;
@@ -21,6 +23,7 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -32,16 +35,27 @@ public class MessageAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
     private static final int VIEW_TYPE_LEFT = 1;
     private static final int VIEW_TYPE_RIGHT = 2;
 
-
     private Context mContext;
     private String senderImageUrl;
     private String receiverImageUrl;
     private List<Object> combinedList = new ArrayList<>();
+    private OnMessageDeleteListener deleteListener;
+    private OnMessageReactListener reactListener;
 
-    public MessageAdapter(Context mContext, Map<String, List<Chat>> groupedMessages, String senderImageUrl, String receiverImageUrl) {
+    public interface OnMessageDeleteListener {
+        void onMessageDelete(String messageId);
+    }
+
+    public interface OnMessageReactListener {
+        void onMessageReact(String messageId);
+    }
+
+    public MessageAdapter(Context mContext, Map<String, List<Chat>> groupedMessages, String senderImageUrl, String receiverImageUrl, OnMessageDeleteListener deleteListener, OnMessageReactListener reactListener) {
         this.mContext = mContext;
         this.senderImageUrl = senderImageUrl;
         this.receiverImageUrl = receiverImageUrl;
+        this.deleteListener = deleteListener;
+        this.reactListener = reactListener;
         buildCombinedList(groupedMessages);
     }
 
@@ -68,8 +82,9 @@ public class MessageAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
         }
     }
 
+    @NonNull
     @Override
-    public RecyclerView.ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
+    public RecyclerView.ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
         LayoutInflater inflater = LayoutInflater.from(mContext);
         if (viewType == VIEW_TYPE_DATE) {
             View view = inflater.inflate(R.layout.item_date, parent, false);
@@ -84,7 +99,7 @@ public class MessageAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
     }
 
     @Override
-    public void onBindViewHolder(RecyclerView.ViewHolder holder, int position) {
+    public void onBindViewHolder(@NonNull RecyclerView.ViewHolder holder, int position) {
         Object item = combinedList.get(position);
 
         if (holder instanceof DateViewHolder) {
@@ -97,10 +112,9 @@ public class MessageAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
             msgHolder.timeText.setText(formatTime(chat.getTimestamp()));
 
             if (position == combinedList.size() - 1) {
-                // check for isseen
-                if (chat.isIsseen()){
+                if (chat.isIsseen()) {
                     msgHolder.seenTv.setText(" • Seen");
-                }else {
+                } else {
                     msgHolder.seenTv.setText(" • Delivered");
                 }
             } else {
@@ -132,6 +146,46 @@ public class MessageAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
                             .into(msgHolder.profileImage);
                 }
             }
+
+            // Handle delete button
+            if (msgHolder.deleteBtn != null && chat.getSender().equals(currentUserId)) {
+                msgHolder.deleteBtn.setVisibility(View.VISIBLE);
+                msgHolder.deleteBtn.setOnClickListener(v -> {
+                    if (deleteListener != null && chat.getMessageId() != null) {
+                        deleteListener.onMessageDelete(chat.getMessageId());
+                    }
+                });
+            } else if (msgHolder.deleteBtn != null) {
+                msgHolder.deleteBtn.setVisibility(View.GONE);
+            }
+
+            // Handle reaction button
+            if (msgHolder.reactBtn != null) {
+                msgHolder.reactBtn.setOnClickListener(v -> {
+                    if (reactListener != null && chat.getMessageId() != null) {
+                        reactListener.onMessageReact(chat.getMessageId());
+                    }
+                });
+            }
+
+            // Display reactions
+            if (chat.getReactions() != null && !chat.getReactions().isEmpty()) {
+                Map<String, Integer> reactionCounts = new HashMap<>();
+                for (String emoji : chat.getReactions().values()) {
+                    reactionCounts.put(emoji, reactionCounts.getOrDefault(emoji, 0) + 1);
+                }
+                msgHolder.reactionsLayout.removeAllViews();
+                for (Map.Entry<String, Integer> entry : reactionCounts.entrySet()) {
+                    String emoji = entry.getKey();
+                    int count = entry.getValue();
+                    TextView tv = new TextView(mContext);
+                    tv.setText(emoji + (count > 1 ? " " + count : ""));
+                    tv.setTextSize(14);
+                    msgHolder.reactionsLayout.addView(tv);
+                }
+            } else {
+                msgHolder.reactionsLayout.removeAllViews();
+            }
         }
     }
 
@@ -152,25 +206,21 @@ public class MessageAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
 
         Calendar today = Calendar.getInstance();
 
-        // Check Today
         if (msgCal.get(Calendar.YEAR) == today.get(Calendar.YEAR)
                 && msgCal.get(Calendar.DAY_OF_YEAR) == today.get(Calendar.DAY_OF_YEAR)) {
             return "Today";
         }
 
-        // Check Yesterday
         today.add(Calendar.DAY_OF_YEAR, -1);
         if (msgCal.get(Calendar.YEAR) == today.get(Calendar.YEAR)
                 && msgCal.get(Calendar.DAY_OF_YEAR) == today.get(Calendar.DAY_OF_YEAR)) {
             return "Yesterday";
         }
 
-        // Else show full date
         SimpleDateFormat sdf = new SimpleDateFormat("d MMMM yyyy", Locale.getDefault());
         return sdf.format(messageDate);
     }
 
-    // --- View Holders ---
     public static class DateViewHolder extends RecyclerView.ViewHolder {
         TextView dateText;
 
@@ -183,6 +233,9 @@ public class MessageAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
     public static class MessageViewHolder extends RecyclerView.ViewHolder {
         TextView messageText, timeText, seenTv;
         ImageView profileImage;
+        ImageButton deleteBtn;
+        ImageButton reactBtn;
+        LinearLayout reactionsLayout;
 
         public MessageViewHolder(View itemView) {
             super(itemView);
@@ -190,6 +243,9 @@ public class MessageAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
             timeText = itemView.findViewById(R.id.msgTime);
             profileImage = itemView.findViewById(R.id.profile_image);
             seenTv = itemView.findViewById(R.id.seen_status);
+            deleteBtn = itemView.findViewById(R.id.deleteBtn);
+            reactBtn = itemView.findViewById(R.id.reactBtn);
+            reactionsLayout = itemView.findViewById(R.id.reactionsLayout);
         }
     }
 }
