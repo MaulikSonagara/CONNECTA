@@ -1,6 +1,7 @@
 package com.example.connecta666620de.adapters;
 
 import android.content.Context;
+import android.opengl.Visibility;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -95,6 +96,17 @@ public class MessageAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
             msgHolder.messageText.setText(chat.getMessage());
             msgHolder.timeText.setText(formatTime(chat.getTimestamp()));
 
+            if (position == combinedList.size() - 1) {
+                // check for isseen
+                if (chat.isIsseen()){
+                    msgHolder.seenTv.setText(" • Seen");
+                }else {
+                    msgHolder.seenTv.setText(" • Delivered");
+                }
+            } else {
+                msgHolder.seenTv.setVisibility(View.GONE);
+            }
+
             String currentUserId = FirebaseAuth.getInstance().getCurrentUser().getUid();
             String profileUrlToUse = chat.getSender().equals(currentUserId) ? senderImageUrl : receiverImageUrl;
 
@@ -169,7 +181,7 @@ public class MessageAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
     }
 
     public static class MessageViewHolder extends RecyclerView.ViewHolder {
-        TextView messageText, timeText;
+        TextView messageText, timeText, seenTv;
         ImageView profileImage;
 
         public MessageViewHolder(View itemView) {
@@ -177,6 +189,7 @@ public class MessageAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
             messageText = itemView.findViewById(R.id.show_message);
             timeText = itemView.findViewById(R.id.msgTime);
             profileImage = itemView.findViewById(R.id.profile_image);
+            seenTv = itemView.findViewById(R.id.seen_status);
         }
     }
 }

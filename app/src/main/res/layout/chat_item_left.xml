@@ -36,7 +36,6 @@
         android:layout_marginStart="4dp"
         android:visibility="gone"
         />
-
     <!-- Time Below -->
     <TextView
         android:id="@+id/msgTime"

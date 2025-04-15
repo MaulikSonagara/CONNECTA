@@ -1,5 +1,6 @@
 package com.example.connecta666620de;
 
+import android.annotation.SuppressLint;
 import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
@@ -10,6 +11,7 @@ import android.view.View;
 import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -67,7 +69,11 @@ public class MessageActivity extends AppCompatActivity {
     // Add these class variables at the top
     private Handler typingHandler = new Handler();
     private static final long TYPING_TIMEOUT = 500; // 1 second delay after typing stops
+    DatabaseReference seenMessageReference;
+    ValueEventListener seenListener;
+    LinearLayout openProfileFromChat;
 
+    @SuppressLint("MissingInflatedId")
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -86,6 +92,7 @@ public class MessageActivity extends AppCompatActivity {
         sendMsgbtn = findViewById(R.id.sendMessageButton);
         msgInputEt = findViewById(R.id.messageInput);
         statusTextTv = findViewById(R.id.statusText);
+        openProfileFromChat = findViewById(R.id.openProfileChatLayout);
 
         // Initialize Firebase
         currentUserId = FirebaseAuth.getInstance().getCurrentUser().getUid();
@@ -96,6 +103,8 @@ public class MessageActivity extends AppCompatActivity {
 
         Intent intent = getIntent();
         searchedUserUid = intent.getStringExtra("userID");
+
+        seenMessage(searchedUserUid);
 
         if (searchedUserUid != null) {
             fetchUserProfileData();
@@ -157,6 +166,11 @@ public class MessageActivity extends AppCompatActivity {
         chatId = user.getUid().compareTo(searchedUserUid) < 0 ? user.getUid() + "_" + searchedUserUid : searchedUserUid + "_" + user.getUid();
         DatabaseReference statusRef = FirebaseDatabase.getInstance().getReference("Connecta").child("userChatStatus").child(chatId);
         statusRef.child(user.getUid()).setValue("offline");
+
+        // remove seenlistener
+        if (seenListener != null) {
+            seenMessageReference.removeEventListener(seenListener);
+        }
     }
 
     @Override
@@ -272,6 +286,31 @@ public class MessageActivity extends AppCompatActivity {
         }
     }
 
+    private void seenMessage(String friendId){
+        chatId = user.getUid().compareTo(friendId) < 0 ? user.getUid() + "_" + friendId : friendId + "_" + user.getUid();
+        currentUserId = user.getUid();
+        seenMessageReference = FirebaseDatabase.getInstance().getReference("Connecta").child("Chat").child(chatId);
+
+        seenListener = seenMessageReference.addValueEventListener(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot snapshot) {
+                for (DataSnapshot ds: snapshot.getChildren()){
+                    Chat chat = ds.getValue(Chat.class);
+                    if (chat.getReceiver().equals(currentUserId) && chat.getSender().equals(friendId)){
+                        HashMap<String, Object> hashMap = new HashMap<>();
+                        hashMap.put("isseen",true);
+                        ds.getRef().updateChildren(hashMap);
+                    }
+                }
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError error) {
+
+            }
+        });
+    }
+
     public void sendMessage(String sender, String receiver, String message) {
         DatabaseReference reference = FirebaseDatabase.getInstance().getReference();
         long timestamp = System.currentTimeMillis();
@@ -280,6 +319,7 @@ public class MessageActivity extends AppCompatActivity {
         hashMap.put("sender", sender);
         hashMap.put("receiver", receiver);
         hashMap.put("message", message);
+        hashMap.put("isseen",false);
         hashMap.put("timestamp", timestamp);
 
         String chatId = sender.compareTo(receiver) < 0 ? sender + "_" + receiver : receiver + "_" + sender;
@@ -351,8 +391,4 @@ public class MessageActivity extends AppCompatActivity {
         return dateFormat.format(new Date(timestamp));
     }
 
-    private String formatTime(long timestamp) {
-        SimpleDateFormat timeFormat = new SimpleDateFormat("hh:mm a", Locale.getDefault());
-        return timeFormat.format(new Date(timestamp));
-    }
 }
