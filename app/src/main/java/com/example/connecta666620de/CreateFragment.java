@@ -1,64 +1,246 @@
 package com.example.connecta666620de;
 
+import android.content.Intent;
+import android.net.Uri;
 import android.os.Bundle;
-
-import androidx.fragment.app.Fragment;
-
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
+import android.widget.Button;
+import android.widget.EditText;
+import android.widget.ImageView;
+import android.widget.LinearLayout;
+import android.widget.Spinner;
+import android.widget.Toast;
 
-/**
- * A simple {@link Fragment} subclass.
- * Use the {@link CreateFragment#newInstance} factory method to
- * create an instance of this fragment.
- */
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.fragment.app.Fragment;
+
+import com.bumptech.glide.Glide;
+import com.example.connecta666620de.model.Post;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.ServerValue;
+import com.google.firebase.storage.FirebaseStorage;
+import com.google.firebase.storage.StorageReference;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 public class CreateFragment extends Fragment {
 
-    // TODO: Rename parameter arguments, choose names that match
-    // the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
-    private static final String ARG_PARAM1 = "param1";
-    private static final String ARG_PARAM2 = "param2";
+    private static final int PICK_IMAGE_REQUEST = 1;
 
-    // TODO: Rename and change types of parameters
-    private String mParam1;
-    private String mParam2;
+    private Spinner postTypeSpinner, correctAnswerSpinner;
+    private LinearLayout generalInputs, doubtInputs, quizInputs;
+    private ImageView imagePreview;
+    private Button pickImageBtn, createPostBtn;
+    private EditText captionInput, doubtQuestionInput, quizQuestionInput;
+    private EditText option1Input, option2Input, option3Input, option4Input;
+    private Uri selectedImageUri;
 
-    public CreateFragment() {
-        // Required empty public constructor
-    }
+    private FirebaseAuth firebaseAuth;
+    private DatabaseReference databaseReference;
+    private StorageReference storageReference;
 
-    /**
-     * Use this factory method to create a new instance of
-     * this fragment using the provided parameters.
-     *
-     * @param param1 Parameter 1.
-     * @param param2 Parameter 2.
-     * @return A new instance of fragment CreateFragment.
-     */
-    // TODO: Rename and change types and number of parameters
-    public static CreateFragment newInstance(String param1, String param2) {
-        CreateFragment fragment = new CreateFragment();
-        Bundle args = new Bundle();
-        args.putString(ARG_PARAM1, param1);
-        args.putString(ARG_PARAM2, param2);
-        fragment.setArguments(args);
-        return fragment;
+    public CreateFragment() {}
+
+    @Override
+    public void onCreate(@Nullable Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        firebaseAuth = FirebaseAuth.getInstance();
+        databaseReference = FirebaseDatabase.getInstance().getReference("Connecta");
+        storageReference = FirebaseStorage.getInstance().getReference("post_images");
     }
 
     @Override
-    public void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        if (getArguments() != null) {
-            mParam1 = getArguments().getString(ARG_PARAM1);
-            mParam2 = getArguments().getString(ARG_PARAM2);
+    public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
+        View view = inflater.inflate(R.layout.fragment_create, container, false);
+
+        postTypeSpinner = view.findViewById(R.id.post_type_spinner);
+        generalInputs = view.findViewById(R.id.general_inputs);
+        doubtInputs = view.findViewById(R.id.doubt_inputs);
+        quizInputs = view.findViewById(R.id.quiz_inputs);
+        imagePreview = view.findViewById(R.id.image_preview);
+        pickImageBtn = view.findViewById(R.id.pick_image_btn);
+        createPostBtn = view.findViewById(R.id.create_post_btn);
+        captionInput = view.findViewById(R.id.caption_input);
+        doubtQuestionInput = view.findViewById(R.id.doubt_question_input);
+        quizQuestionInput = view.findViewById(R.id.quiz_question_input);
+        option1Input = view.findViewById(R.id.option1_input);
+        option2Input = view.findViewById(R.id.option2_input);
+        option3Input = view.findViewById(R.id.option3_input);
+        option4Input = view.findViewById(R.id.option4_input);
+        correctAnswerSpinner = view.findViewById(R.id.correct_answer_spinner);
+
+        List<String> postTypes = Arrays.asList("General Image Post", "Doubt Post", "Quiz Post");
+        ArrayAdapter<String> postTypeAdapter = new ArrayAdapter<>(requireContext(), android.R.layout.simple_spinner_item, postTypes);
+        postTypeAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        postTypeSpinner.setAdapter(postTypeAdapter);
+
+        postTypeSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                String selectedType = postTypes.get(position);
+                generalInputs.setVisibility(View.GONE);
+                doubtInputs.setVisibility(View.GONE);
+                quizInputs.setVisibility(View.GONE);
+
+                switch (selectedType) {
+                    case "General Image Post":
+                        generalInputs.setVisibility(View.VISIBLE);
+                        break;
+                    case "Doubt Post":
+                        doubtInputs.setVisibility(View.VISIBLE);
+                        break;
+                    case "Quiz Post":
+                        quizInputs.setVisibility(View.VISIBLE);
+                        setupCorrectAnswerSpinner();
+                        break;
+                }
+            }
+
+            @Override
+            public void onNothingSelected(AdapterView<?> parent) {}
+        });
+
+        pickImageBtn.setOnClickListener(v -> {
+            Intent intent = new Intent(Intent.ACTION_PICK);
+            intent.setType("image/*");
+            startActivityForResult(intent, PICK_IMAGE_REQUEST);
+        });
+
+        createPostBtn.setOnClickListener(v -> validateAndSavePost());
+
+        return view;
+    }
+
+    private void setupCorrectAnswerSpinner() {
+        List<String> answerOptions = Arrays.asList("Option 1", "Option 2", "Option 3", "Option 4");
+        ArrayAdapter<String> answerAdapter = new ArrayAdapter<>(requireContext(), android.R.layout.simple_spinner_item, answerOptions);
+        answerAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        correctAnswerSpinner.setAdapter(answerAdapter);
+    }
+
+    @Override
+    public void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == PICK_IMAGE_REQUEST && resultCode == getActivity().RESULT_OK && data != null && data.getData() != null) {
+            selectedImageUri = data.getData();
+            Glide.with(this)
+                    .load(selectedImageUri)
+                    .fitCenter()
+                    .into(imagePreview);
         }
     }
 
-    @Override
-    public View onCreateView(LayoutInflater inflater, ViewGroup container,
-                             Bundle savedInstanceState) {
-        // Inflate the layout for this fragment
-        return inflater.inflate(R.layout.fragment_create, container, false);
+    private void validateAndSavePost() {
+        String postType = postTypeSpinner.getSelectedItem().toString();
+        String userId = firebaseAuth.getCurrentUser().getUid();
+        String postId = databaseReference.child("Posts").push().getKey();
+        long timestamp = System.currentTimeMillis();
+
+        switch (postType) {
+            case "General Image Post":
+                if (selectedImageUri == null) {
+                    Toast.makeText(requireContext(), "Please select an image", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+                String caption = captionInput.getText().toString().trim();
+                if (caption.isEmpty()) {
+                    Toast.makeText(requireContext(), "Please enter a caption", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+                uploadImageAndSaveGeneralPost(postId, userId, timestamp, caption);
+                break;
+
+            case "Doubt Post":
+                String doubtQuestion = doubtQuestionInput.getText().toString().trim();
+                if (doubtQuestion.isEmpty()) {
+                    Toast.makeText(requireContext(), "Please enter a question", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+                saveDoubtPost(postId, userId, timestamp, doubtQuestion);
+                break;
+
+            case "Quiz Post":
+                String quizQuestion = quizQuestionInput.getText().toString().trim();
+                String option1 = option1Input.getText().toString().trim();
+                String option2 = option2Input.getText().toString().trim();
+                String option3 = option3Input.getText().toString().trim();
+                String option4 = option4Input.getText().toString().trim();
+                String correctAnswer = correctAnswerSpinner.getSelectedItem().toString();
+
+                if (quizQuestion.isEmpty() || option1.isEmpty() || option2.isEmpty() || option3.isEmpty() || option4.isEmpty()) {
+                    Toast.makeText(requireContext(), "Please fill all fields", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+                saveQuizPost(postId, userId, timestamp, quizQuestion, Arrays.asList(option1, option2, option3, option4), correctAnswer);
+                break;
+        }
+    }
+
+    private void uploadImageAndSaveGeneralPost(String postId, String userId, long timestamp, String caption) {
+        StorageReference imageRef = storageReference.child(postId + ".jpg");
+        imageRef.putFile(selectedImageUri)
+                .addOnSuccessListener(taskSnapshot -> {
+                    imageRef.getDownloadUrl().addOnSuccessListener(uri -> {
+                        String imageUrl = uri.toString();
+                        Post post = new Post(postId, userId, timestamp, "General", imageUrl, caption);
+                        savePostToFirebase(post, userId);
+                    });
+                })
+                .addOnFailureListener(e -> {
+                    Toast.makeText(requireContext(), "Failed to upload image: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                });
+    }
+
+    private void saveDoubtPost(String postId, String userId, long timestamp, String question) {
+        Post post = new Post(postId, userId, timestamp, "Doubt", question);
+        savePostToFirebase(post, userId);
+    }
+
+    private void saveQuizPost(String postId, String userId, long timestamp, String question, List<String> options, String correctAnswer) {
+        Post post = new Post(postId, userId, timestamp, "Quiz", question, options, correctAnswer);
+        savePostToFirebase(post, userId);
+    }
+
+    private void savePostToFirebase(Post post, String userId) {
+        Map<String, Object> updates = new HashMap<>();
+        updates.put("Posts/" + post.getPostId(), post);
+        updates.put("UserPosts/" + userId + "/" + post.getPostId(), post);
+        updates.put("ConnectaUsers/" + userId + "/posts", ServerValue.increment(1));
+
+        databaseReference.updateChildren(updates)
+                .addOnSuccessListener(aVoid -> {
+                    Toast.makeText(requireContext(), "Post created successfully", Toast.LENGTH_SHORT).show();
+                    clearInputs();
+                })
+                .addOnFailureListener(e -> {
+                    Toast.makeText(requireContext(), "Failed to create post: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                });
+    }
+
+    private void clearInputs() {
+        captionInput.setText("");
+        doubtQuestionInput.setText("");
+        quizQuestionInput.setText("");
+        option1Input.setText("");
+        option2Input.setText("");
+        option3Input.setText("");
+        option4Input.setText("");
+        imagePreview.setImageDrawable(null);
+        selectedImageUri = null;
+        postTypeSpinner.setSelection(0);
+        generalInputs.setVisibility(View.GONE);
+        doubtInputs.setVisibility(View.GONE);
+        quizInputs.setVisibility(View.GONE);
     }
 }

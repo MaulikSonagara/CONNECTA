@@ -26,11 +26,6 @@ public class HomeFragment extends Fragment {
 
         // Set click listener to open ChatFragment
         chatBtn.setOnClickListener(v -> {
-//            FragmentTransaction transaction = getParentFragmentManager().beginTransaction();
-//            transaction.replace(R.id.main_frame_layout, chatFragment);
-//            transaction.addToBackStack(null); // Allow back navigation
-//            transaction.commit();
-
             // open chatListActivity
             Intent intent = new Intent(getActivity(), ChatListActivity.class);
             startActivity(intent);

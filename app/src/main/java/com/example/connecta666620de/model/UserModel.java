@@ -11,7 +11,6 @@ public class UserModel {
     private Timestamp createdAt;
     private String bio;
     private String image;
-
     private String lastMessage;
     private long timestamp;
 

@@ -9,53 +9,13 @@
         android:orientation="vertical"
         android:padding="16dp">
 
-        <!-- Post Type Selector -->
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Select Post Type"
-            android:textSize="16sp"
-            android:textStyle="bold"
-            android:layout_marginBottom="8dp" />
-
-        <Spinner
-            android:id="@+id/post_type_spinner"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginBottom="16dp" />
-
-        <!-- Dynamic Input Container -->
-        <LinearLayout
-            android:id="@+id/input_container"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical" />
-
-        <!-- General Post Inputs (Hidden by Default) -->
+        <!-- General Post Inputs -->
         <LinearLayout
             android:id="@+id/general_inputs"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
             android:visibility="gone">
-
-            <ImageView
-                android:id="@+id/image_preview"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:maxHeight="300dp"
-                android:scaleType="fitCenter"
-                android:adjustViewBounds="true"
-                android:background="@drawable/border"
-                android:layout_marginBottom="8dp" />
-
-            <Button
-                android:id="@+id/pick_image_btn"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Pick Image"
-                android:layout_gravity="center"
-                android:layout_marginBottom="8dp" />
 
             <EditText
                 android:id="@+id/caption_input"
@@ -67,7 +27,7 @@
                 android:layout_marginBottom="16dp" />
         </LinearLayout>
 
-        <!-- Doubt Post Inputs (Hidden by Default) -->
+        <!-- Doubt Post Inputs -->
         <LinearLayout
             android:id="@+id/doubt_inputs"
             android:layout_width="match_parent"
@@ -85,7 +45,7 @@
                 android:layout_marginBottom="16dp" />
         </LinearLayout>
 
-        <!-- Quiz Post Inputs (Hidden by Default) -->
+        <!-- Quiz Post Inputs -->
         <LinearLayout
             android:id="@+id/quiz_inputs"
             android:layout_width="match_parent"
@@ -144,12 +104,12 @@
                 android:layout_marginBottom="16dp" />
         </LinearLayout>
 
-        <!-- Submit Button -->
+        <!-- Update Button -->
         <Button
-            android:id="@+id/create_post_btn"
+            android:id="@+id/update_post_btn"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Create Post"
+            android:text="Update Post"
             android:layout_marginTop="16dp" />
     </LinearLayout>
 </ScrollView>
