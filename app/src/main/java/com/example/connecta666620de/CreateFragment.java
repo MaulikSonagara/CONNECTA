@@ -193,7 +193,7 @@ public class CreateFragment extends Fragment {
                 .addOnSuccessListener(taskSnapshot -> {
                     imageRef.getDownloadUrl().addOnSuccessListener(uri -> {
                         String imageUrl = uri.toString();
-                        Post post = new Post(postId, userId, timestamp, "General", imageUrl, caption);
+                        Post post = new Post(postId, userId, "General", caption, imageUrl, null, null, null, timestamp);
                         savePostToFirebase(post, userId);
                     });
                 })
@@ -203,12 +203,12 @@ public class CreateFragment extends Fragment {
     }
 
     private void saveDoubtPost(String postId, String userId, long timestamp, String question) {
-        Post post = new Post(postId, userId, timestamp, "Doubt", question);
+        Post post = new Post(postId, userId, "Doubt", null, null, question, null, null, timestamp);
         savePostToFirebase(post, userId);
     }
 
     private void saveQuizPost(String postId, String userId, long timestamp, String question, List<String> options, String correctAnswer) {
-        Post post = new Post(postId, userId, timestamp, "Quiz", question, options, correctAnswer);
+        Post post = new Post(postId, userId, "Quiz", null, null, question, options, correctAnswer, timestamp);
         savePostToFirebase(post, userId);
     }
 

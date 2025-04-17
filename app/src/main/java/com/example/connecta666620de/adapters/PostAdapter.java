@@ -1,6 +1,8 @@
 package com.example.connecta666620de.adapters;
 
 import android.content.Context;
+import android.content.SharedPreferences;
+import android.os.Bundle;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -10,17 +12,22 @@ import android.widget.PopupMenu;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
+import androidx.fragment.app.FragmentActivity;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.bumptech.glide.Glide;
+import com.example.connecta666620de.CommentFragment;
 import com.example.connecta666620de.R;
 import com.example.connecta666620de.model.Post;
+import com.example.connecta666620de.utills.AndroidUtil;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.database.FirebaseDatabase;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
-
+import java.util.ArrayList;
 public class PostAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
 
     private static final int TYPE_GENERAL = 0;
@@ -30,6 +37,7 @@ public class PostAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
     private Context context;
     private List<Post> postList;
     private OnPostOptionsListener optionsListener;
+    private SharedPreferences preferences;
 
     public interface OnPostOptionsListener {
         void onEditPost(Post post);
@@ -40,6 +48,7 @@ public class PostAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
         this.context = context;
         this.postList = postList;
         this.optionsListener = listener;
+        this.preferences = context.getSharedPreferences("QuizSelections", Context.MODE_PRIVATE);
         Log.d("PostAdapter", "Initialized with " + postList.size() + " posts");
     }
 
@@ -92,6 +101,9 @@ public class PostAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
         Log.d("PostAdapter", "Binding position " + position + ": ID = " + post.getPostId() + ", Type = " + post.getType() +
                 ", Caption/Question = " + (post.getCaption() != null ? post.getCaption() : post.getQuestion()));
 
+        String currentUserId = FirebaseAuth.getInstance().getCurrentUser().getUid();
+        boolean isLiked = post.getLikedBy() != null && post.getLikedBy().contains(currentUserId);
+
         if (holder instanceof GeneralViewHolder) {
             GeneralViewHolder generalHolder = (GeneralViewHolder) holder;
             generalHolder.caption.setText(post.getCaption() != null ? post.getCaption() : "");
@@ -109,11 +121,13 @@ public class PostAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
                 generalHolder.image.setImageDrawable(null);
             }
             generalHolder.optionsMenu.setOnClickListener(v -> showOptionsMenu(v, post));
+            setupInteractionButtons(generalHolder, post, isLiked);
         } else if (holder instanceof DoubtViewHolder) {
             DoubtViewHolder doubtHolder = (DoubtViewHolder) holder;
             doubtHolder.question.setText(post.getQuestion() != null ? post.getQuestion() : "");
             doubtHolder.timestamp.setText(timestamp);
             doubtHolder.optionsMenu.setOnClickListener(v -> showOptionsMenu(v, post));
+            setupInteractionButtons(doubtHolder, post, isLiked);
             Log.d("PostAdapter", "Bound Doubt post at position " + position);
         } else if (holder instanceof QuizViewHolder) {
             QuizViewHolder quizHolder = (QuizViewHolder) holder;
@@ -134,10 +148,111 @@ public class PostAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
             }
             quizHolder.timestamp.setText(timestamp);
             quizHolder.optionsMenu.setOnClickListener(v -> showOptionsMenu(v, post));
+            setupInteractionButtons(quizHolder, post, isLiked);
+
+            // Handle quiz interactions
+            String postId = post.getPostId();
+            String selectedOption = preferences.getString(postId, null);
+            if (selectedOption != null) {
+                updateOptionBorders(quizHolder, options, post.getCorrectAnswer(), selectedOption);
+                disableOptions(quizHolder);
+            } else {
+                quizHolder.option1.setOnClickListener(v -> handleOptionClick(quizHolder, post, options, 0));
+                quizHolder.option2.setOnClickListener(v -> handleOptionClick(quizHolder, post, options, 1));
+                quizHolder.option3.setOnClickListener(v -> handleOptionClick(quizHolder, post, options, 2));
+                quizHolder.option4.setOnClickListener(v -> handleOptionClick(quizHolder, post, options, 3));
+            }
         }
         // Ensure view is visible
         holder.itemView.setVisibility(View.VISIBLE);
         Log.d("PostAdapter", "Set visibility VISIBLE for position " + position);
+    }
+
+    private void setupInteractionButtons(BaseViewHolder holder, Post post, boolean isLiked) {
+        // Set like button state and count
+        holder.likeButton.setSelected(isLiked);
+        holder.likeCount.setText(String.valueOf(post.getLikeCount()));
+        holder.commentCount.setText(String.valueOf(post.getCommentCount()));
+
+        // Like button click
+        holder.likeButton.setOnClickListener(v -> {
+            boolean newLikeState = !isLiked;
+            holder.likeButton.setSelected(newLikeState);
+            List<String> likedBy = post.getLikedBy() != null ? post.getLikedBy() : new ArrayList<>();
+            String userId = FirebaseAuth.getInstance().getCurrentUser().getUid();
+
+            if (newLikeState) {
+                if (!likedBy.contains(userId)) {
+                    likedBy.add(userId);
+                    post.setLikeCount(post.getLikeCount() + 1);
+                }
+            } else {
+                likedBy.remove(userId);
+                post.setLikeCount(Math.max(0, post.getLikeCount() - 1));
+            }
+            post.setLikedBy(likedBy);
+            holder.likeCount.setText(String.valueOf(post.getLikeCount()));
+
+            // Update Firebase
+            FirebaseDatabase.getInstance().getReference("Connecta/Posts/" + post.getPostId())
+                    .child("likedBy").setValue(likedBy);
+            FirebaseDatabase.getInstance().getReference("Connecta/Posts/" + post.getPostId())
+                    .child("likeCount").setValue(post.getLikeCount());
+            FirebaseDatabase.getInstance().getReference("Connecta/UserPosts/" + post.getUserId() + "/" + post.getPostId())
+                    .child("likedBy").setValue(likedBy);
+            FirebaseDatabase.getInstance().getReference("Connecta/UserPosts/" + post.getUserId() + "/" + post.getPostId())
+                    .child("likeCount").setValue(post.getLikeCount());
+        });
+
+        // Comment button click
+        holder.commentButton.setOnClickListener(v -> {
+            CommentFragment commentFragment = new CommentFragment();
+            Bundle args = new Bundle();
+            args.putString("postId", post.getPostId());
+            commentFragment.setArguments(args);
+            ((FragmentActivity) context).getSupportFragmentManager().beginTransaction()
+                    .replace(R.id.main_frame_layout, commentFragment)
+                    .addToBackStack(null)
+                    .commit();
+        });
+
+        // Share button (disabled for now)
+        holder.shareButton.setOnClickListener(v -> AndroidUtil.showToast(context, "Share feature coming soon!"));
+    }
+
+    private void handleOptionClick(QuizViewHolder holder, Post post, List<String> options, int selectedIndex) {
+        String selectedOption = "Option " + (selectedIndex + 1);
+        String correctAnswer = post.getCorrectAnswer();
+        String postId = post.getPostId();
+
+        preferences.edit().putString(postId, selectedOption).apply();
+        updateOptionBorders(holder, options, correctAnswer, selectedOption);
+        disableOptions(holder);
+    }
+
+    private void updateOptionBorders(QuizViewHolder holder, List<String> options, String correctAnswer, String selectedOption) {
+        TextView[] optionViews = {holder.option1, holder.option2, holder.option3, holder.option4};
+        for (int i = 0; i < optionViews.length; i++) {
+            String optionLabel = "Option " + (i + 1);
+            if (optionLabel.equals(selectedOption)) {
+                if (selectedOption.equals(correctAnswer)) {
+                    optionViews[i].setBackgroundResource(R.drawable.option_border_correct);
+                } else {
+                    optionViews[i].setBackgroundResource(R.drawable.option_border_incorrect);
+                }
+            } else if (optionLabel.equals(correctAnswer)) {
+                optionViews[i].setBackgroundResource(R.drawable.option_border_correct);
+            } else {
+                optionViews[i].setBackgroundResource(R.drawable.option_border_default);
+            }
+        }
+    }
+
+    private void disableOptions(QuizViewHolder holder) {
+        holder.option1.setClickable(false);
+        holder.option2.setClickable(false);
+        holder.option3.setClickable(false);
+        holder.option4.setClickable(false);
     }
 
     private void showOptionsMenu(View view, Post post) {
@@ -168,34 +283,44 @@ public class PostAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
         return sdf.format(new Date(timestamp));
     }
 
-    static class GeneralViewHolder extends RecyclerView.ViewHolder {
-        ImageView image, optionsMenu;
-        TextView caption, timestamp;
+    static abstract class BaseViewHolder extends RecyclerView.ViewHolder {
+        ImageView optionsMenu, likeButton, commentButton, shareButton;
+        TextView timestamp, likeCount, commentCount;
+
+        public BaseViewHolder(@NonNull View itemView) {
+            super(itemView);
+            optionsMenu = itemView.findViewById(R.id.options_menu);
+            likeButton = itemView.findViewById(R.id.like_button);
+            commentButton = itemView.findViewById(R.id.comment_button);
+            shareButton = itemView.findViewById(R.id.share_button);
+            likeCount = itemView.findViewById(R.id.like_count);
+            commentCount = itemView.findViewById(R.id.comment_count);
+            timestamp = itemView.findViewById(R.id.post_timestamp);
+        }
+    }
+
+    static class GeneralViewHolder extends BaseViewHolder {
+        ImageView image;
+        TextView caption;
 
         public GeneralViewHolder(@NonNull View itemView) {
             super(itemView);
             image = itemView.findViewById(R.id.post_image);
             caption = itemView.findViewById(R.id.post_caption);
-            timestamp = itemView.findViewById(R.id.post_timestamp);
-            optionsMenu = itemView.findViewById(R.id.options_menu);
         }
     }
 
-    static class DoubtViewHolder extends RecyclerView.ViewHolder {
-        TextView question, timestamp;
-        ImageView optionsMenu;
+    static class DoubtViewHolder extends BaseViewHolder {
+        TextView question;
 
         public DoubtViewHolder(@NonNull View itemView) {
             super(itemView);
             question = itemView.findViewById(R.id.post_question);
-            timestamp = itemView.findViewById(R.id.post_timestamp);
-            optionsMenu = itemView.findViewById(R.id.options_menu);
         }
     }
 
-    static class QuizViewHolder extends RecyclerView.ViewHolder {
-        TextView question, option1, option2, option3, option4, timestamp;
-        ImageView optionsMenu;
+    static class QuizViewHolder extends BaseViewHolder {
+        TextView question, option1, option2, option3, option4;
 
         public QuizViewHolder(@NonNull View itemView) {
             super(itemView);
@@ -204,8 +329,6 @@ public class PostAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
             option2 = itemView.findViewById(R.id.option2);
             option3 = itemView.findViewById(R.id.option3);
             option4 = itemView.findViewById(R.id.option4);
-            timestamp = itemView.findViewById(R.id.post_timestamp);
-            optionsMenu = itemView.findViewById(R.id.options_menu);
         }
     }
 }
