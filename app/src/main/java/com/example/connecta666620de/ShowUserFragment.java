@@ -3,10 +3,11 @@ package com.example.connecta666620de;
 import android.content.Intent;
 import android.graphics.Color;
 import android.os.Bundle;
-
 import androidx.annotation.NonNull;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 
 import android.util.Log;
 import android.view.Gravity;
@@ -16,9 +17,10 @@ import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
-
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.request.RequestOptions;
+import com.example.connecta666620de.adapters.PostAdapter;
+import com.example.connecta666620de.model.Post;
 import com.example.connecta666620de.model.Skill;
 import com.example.connecta666620de.utills.AndroidUtil;
 import com.example.connecta666620de.utills.NotificationUtil;
@@ -34,41 +36,39 @@ import com.google.firebase.database.ServerValue;
 import com.google.firebase.database.ValueEventListener;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
-
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class ShowUserFragment extends Fragment {
-
+public class ShowUserFragment extends Fragment implements PostAdapter.OnPostOptionsListener {
 
     String searchedUserUid;
-
     FirebaseAuth firebaseAuth;
     FirebaseUser user;
     FirebaseDatabase firebaseDatabase;
     DatabaseReference databaseReference;
     TextView nameTv, usernameTv, bioTv, followersTv, followingTv, postsTv;
     ImageView avatarIv;
-    LinearLayout skillsContainer,followerArea, followingArea;
-
+    LinearLayout skillsContainer, followerArea, followingArea;
     private MaterialButton connectBtn, messageBtn;
     private boolean isFollowing = false;
+    private RecyclerView postsRecyclerView;
+    private PostAdapter postAdapter;
+    private List<Post> postList;
 
     @Override
     public void onStart() {
         super.onStart();
-        // Refresh follow status when fragment becomes visible
         if (searchedUserUid != null && user != null) {
             checkFollowingStatus();
         }
     }
 
     @Override
-    public View onCreateView(LayoutInflater inflater, ViewGroup container,
-                             Bundle savedInstanceState) {
-        // Inflate the layout for this fragment
+    public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_show_user, container, false);
 
         // Initialize Firebase
@@ -86,54 +86,39 @@ public class ShowUserFragment extends Fragment {
         followingTv = view.findViewById(R.id.following_data_profile);
         postsTv = view.findViewById(R.id.post_data_profile);
         skillsContainer = view.findViewById(R.id.skills_container);
-
         followerArea = view.findViewById(R.id.followerAreaLayout);
         followingArea = view.findViewById(R.id.followingAreaLayout);
+        connectBtn = view.findViewById(R.id.connect_btn);
+        messageBtn = view.findViewById(R.id.message_btn);
+        postsRecyclerView = view.findViewById(R.id.posts_recycler_view);
 
-        // Initialize views
-        connectBtn = view.findViewById(R.id.connect_btn); // Make sure this ID exists in XML
-        messageBtn = view.findViewById(R.id.message_btn); // Make sure this ID exists in XML
+        // Initialize post list and adapter
+        postList = new ArrayList<>();
+        postAdapter = new PostAdapter(getContext(), postList, this);
+        postsRecyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
+        postsRecyclerView.setAdapter(postAdapter);
 
-
-        messageBtn.setOnClickListener(v ->{
+        messageBtn.setOnClickListener(v -> {
             Intent intent = new Intent(getContext(), MessageActivity.class);
-            intent.putExtra("userID",searchedUserUid);
+            intent.putExtra("userID", searchedUserUid);
             startActivity(intent);
         });
 
-        // Check if current user is already following the searched user
-        checkFollowingStatus();
-
-        // Add click listeners for followers and following
-        followerArea.setOnClickListener(v -> openConnectionsList(searchedUserUid,"followers"));
-        followingArea.setOnClickListener(v -> openConnectionsList(searchedUserUid,"following"));
-
-        // Set click listener for "Connect" button
-        connectBtn.setOnClickListener(v -> {
-            if (isFollowing) {
-                unfollowUser();
-            } else {
-                followUser();
-            }
-        });
-
+        // Get searched user ID
         if (getArguments() != null) {
             searchedUserUid = getArguments().getString("userId");
         }
 
-        // Fetch user profile data
+        // Fetch user profile data and posts
         fetchUserProfileData();
-
-        // Fetch user skills
         fetchUserSkills();
+        fetchUserPosts();
 
         // Check if viewed profile is current user's profile
         if (user != null && user.getUid().equals(searchedUserUid)) {
-            // Hide Connect and Message buttons for own profile
             view.findViewById(R.id.connect_btn).setVisibility(View.GONE);
             view.findViewById(R.id.message_btn).setVisibility(View.GONE);
         } else {
-            // Set up follow functionality for other users
             checkFollowingStatus();
             connectBtn.setOnClickListener(v -> {
                 if (isFollowing) {
@@ -143,6 +128,10 @@ public class ShowUserFragment extends Fragment {
                 }
             });
         }
+
+        // Add click listeners for followers and following
+        followerArea.setOnClickListener(v -> openConnectionsList(searchedUserUid, "followers"));
+        followingArea.setOnClickListener(v -> openConnectionsList(searchedUserUid, "following"));
 
         return view;
     }
@@ -158,27 +147,22 @@ public class ShowUserFragment extends Fragment {
                     String bio = "" + ds.child("bio").getValue();
                     String username = "" + ds.child("userName").getValue();
                     String profilePicUrl = "" + ds.child("image").getValue();
-
-                    // SAFE NUMBER HANDLING:
                     Long followersLong = ds.child("follower").getValue(Long.class);
                     Long followingLong = ds.child("following").getValue(Long.class);
                     Long postsLong = ds.child("posts").getValue(Long.class);
-
                     String followers = followersLong != null ? String.valueOf(followersLong) : "0";
                     String following = followingLong != null ? String.valueOf(followingLong) : "0";
                     String posts = postsLong != null ? String.valueOf(postsLong) : "0";
 
-
-                    Log.d("ProfilePic",profilePicUrl);
+                    Log.d("ProfilePic", profilePicUrl);
                     if (profilePicUrl != null && !profilePicUrl.isEmpty()) {
                         if (profilePicUrl.startsWith("gs://")) {
                             FirebaseStorage storage = FirebaseStorage.getInstance();
                             StorageReference storageRef = storage.getReferenceFromUrl(profilePicUrl);
-
                             storageRef.getDownloadUrl().addOnSuccessListener(uri -> {
                                 Log.d("GlideDebug", "Converted URL: " + uri.toString());
                                 Glide.with(getContext())
-                                        .load(uri.toString()) // Load HTTP URL
+                                        .load(uri.toString())
                                         .apply(RequestOptions.circleCropTransform())
                                         .placeholder(R.drawable.person_icon)
                                         .error(R.drawable.person_icon)
@@ -201,10 +185,8 @@ public class ShowUserFragment extends Fragment {
                         Log.e("GlideDebug", "No image URL provided for user: " + searchedUserUid);
                     }
 
-                    // set profile data
                     usernameTv.setText("@" + username);
                     nameTv.setText(firstName + " " + lastName);
-                    usernameTv.setText("@" + username);
                     bioTv.setText(bio);
                     followersTv.setText(followers);
                     followingTv.setText(following);
@@ -214,7 +196,7 @@ public class ShowUserFragment extends Fragment {
 
             @Override
             public void onCancelled(@NonNull DatabaseError error) {
-                Log.e("ProfileFragment", "Failed to load profile data: " + error.getMessage());
+                Log.e("ShowUserFragment", "Failed to load profile data: " + error.getMessage());
             }
         });
     }
@@ -224,7 +206,6 @@ public class ShowUserFragment extends Fragment {
                 .getReference("Connecta")
                 .child("ConnectaUserSkills")
                 .child(searchedUserUid);
-
         skillsRef.addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot snapshot) {
@@ -235,46 +216,84 @@ public class ShowUserFragment extends Fragment {
                         skills.add(skill);
                     }
                 }
-                // Update the UI with skills
                 updateSkillsUI(skills);
             }
 
             @Override
             public void onCancelled(@NonNull DatabaseError error) {
-                Log.e("ProfileFragment", "Failed to load skills: " + error.getMessage());
+                Log.e("ShowUserFragment", "Failed to load skills: " + error.getMessage());
             }
         });
+    }
 
+    private void fetchUserPosts() {
+        DatabaseReference postsRef = FirebaseDatabase.getInstance()
+                .getReference("Connecta")
+                .child("UserPosts")
+                .child(searchedUserUid);
+        postsRef.addValueEventListener(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot snapshot) {
+                postList.clear();
+                Log.d("ShowUserFragment", "Fetching posts for user: " + searchedUserUid);
+                Log.d("ShowUserFragment", "Snapshot exists: " + snapshot.exists() + ", children count: " + snapshot.getChildrenCount());
+                int postCounter = 0;
+                for (DataSnapshot ds : snapshot.getChildren()) {
+                    try {
+                        Post post = ds.getValue(Post.class);
+                        if (post != null) {
+                            Log.d("ShowUserFragment", "Post " + postCounter + " - ID: " + post.getPostId() + ", Type: " + post.getType() +
+                                    ", Caption/Question: " + (post.getCaption() != null ? post.getCaption() : post.getQuestion()) +
+                                    ", Timestamp: " + post.getTimestamp());
+                            postList.add(post);
+                            postCounter++;
+                        } else {
+                            Log.w("ShowUserFragment", "Null post at key: " + ds.getKey());
+                        }
+                    } catch (Exception e) {
+                        Log.e("ShowUserFragment", "Error deserializing post at key: " + ds.getKey() + ", Error: " + e.getMessage());
+                    }
+                }
+                Collections.sort(postList, new Comparator<Post>() {
+                    @Override
+                    public int compare(Post p1, Post p2) {
+                        return Long.compare(p2.getTimestamp(), p1.getTimestamp());
+                    }
+                });
+                Log.d("ShowUserFragment", "Posts sorted by timestamp, total: " + postList.size());
+                postAdapter.notifyDataSetChanged();
+                Log.d("ShowUserFragment", "Adapter notified with " + postList.size() + " posts");
+                if (postList.isEmpty()) {
+                    AndroidUtil.showToast(getContext(), "No posts available.");
+                }
+            }
 
+            @Override
+            public void onCancelled(@NonNull DatabaseError error) {
+                Log.e("ShowUserFragment", "Post fetch error: " + error.getMessage());
+                AndroidUtil.showToast(getContext(), "Failed to load posts: " + error.getMessage());
+            }
+        });
     }
 
     private void updateSkillsUI(List<Skill> skills) {
-        // Clear any existing views
         skillsContainer.removeAllViews();
-
-        // Display up to 4 skills
         int maxSkillsToShow = 4;
         for (int i = 0; i < Math.min(skills.size(), maxSkillsToShow); i++) {
             Skill skill = skills.get(i);
-
-            // Create a TextView for the skill
             TextView skillTextView = new TextView(getContext());
             skillTextView.setText(skill.getTitle());
             skillTextView.setTextSize(12);
             skillTextView.setPadding(16, 8, 16, 8);
             skillTextView.setGravity(Gravity.CENTER);
-            skillTextView.setBackgroundColor(getSkillBackgroundColor(skill.getSkillLevel())); // Set background color
-
-            // Set layout parameters
+            skillTextView.setBackgroundColor(getSkillBackgroundColor(skill.getSkillLevel()));
             LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
-                    0, // Width
-                    LinearLayout.LayoutParams.WRAP_CONTENT, // Height
-                    1 // Weight
+                    0,
+                    LinearLayout.LayoutParams.WRAP_CONTENT,
+                    1
             );
-            params.setMargins(8, 8, 8, 8); // Add margins
+            params.setMargins(8, 8, 8, 8);
             skillTextView.setLayoutParams(params);
-
-            // Add the TextView to the skills container
             skillsContainer.addView(skillTextView);
         }
     }
@@ -282,39 +301,33 @@ public class ShowUserFragment extends Fragment {
     private int getSkillBackgroundColor(String skillLevel) {
         switch (skillLevel) {
             case "Beginner":
-                return Color.parseColor("#ADD8E6"); // Light Blue
+                return Color.parseColor("#ADD8E6");
             case "Intermediate":
-                return Color.parseColor("#90EE90"); // Light Green
+                return Color.parseColor("#90EE90");
             case "Advanced":
-                return Color.parseColor("#FFFFE0"); // Light Yellow
+                return Color.parseColor("#FFFFE0");
             case "Expert":
-                return Color.parseColor("#FFA07A"); // Light Orange
+                return Color.parseColor("#FFA07A");
             case "Master":
-                return Color.parseColor("#FFC0CB"); // Light Pink
+                return Color.parseColor("#FFC0CB");
             default:
-                return Color.parseColor("#ADD8E6"); // Default to Light Blue
+                return Color.parseColor("#ADD8E6");
         }
     }
 
-    // Check if the current user is following the searched user
     private void checkFollowingStatus() {
         if (user == null || searchedUserUid == null) return;
-
         DatabaseReference followingRef = FirebaseDatabase.getInstance()
                 .getReference("Connecta")
                 .child("UserConnections")
                 .child(user.getUid())
                 .child("following")
                 .child(searchedUserUid);
-
-        // to keep listening for changes
         followingRef.addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot snapshot) {
                 isFollowing = snapshot.exists();
                 updateConnectButton();
-
-                // Also update the counts when status changes
                 if (isFollowing) {
                     fetchUpdatedFollowerCount(searchedUserUid);
                 }
@@ -322,12 +335,11 @@ public class ShowUserFragment extends Fragment {
 
             @Override
             public void onCancelled(@NonNull DatabaseError error) {
-                Log.e("ShowUser", "Error checking follow status: " + error.getMessage());
+                Log.e("ShowUserFragment", "Error checking follow status: " + error.getMessage());
             }
         });
     }
 
-    // Update "Connect" button UI
     private void updateConnectButton() {
         if (isFollowing) {
             connectBtn.setText("Connected");
@@ -340,59 +352,45 @@ public class ShowUserFragment extends Fragment {
 
     private void followUser() {
         if (user == null || searchedUserUid == null) return;
-
         String currentUserId = user.getUid();
         String targetUserId = searchedUserUid;
-
         DatabaseReference rootRef = FirebaseDatabase.getInstance().getReference("Connecta");
-
-        // Atomic updates
         Map<String, Object> updates = new HashMap<>();
         updates.put("UserConnections/" + currentUserId + "/following/" + targetUserId, true);
         updates.put("UserConnections/" + targetUserId + "/followers/" + currentUserId, true);
         updates.put("ConnectaUsers/" + currentUserId + "/following", ServerValue.increment(1));
         updates.put("ConnectaUsers/" + targetUserId + "/follower", ServerValue.increment(1));
-
         rootRef.updateChildren(updates)
                 .addOnSuccessListener(aVoid -> {
                     isFollowing = true;
                     updateConnectButton();
-                    fetchUpdatedFollowerCount(targetUserId);  // Fetch updated count
-
-                    // Send both notifications
-                    NotificationUtil.sendFollowNotification(currentUserId, targetUserId); // To the followed user
-                    NotificationUtil.sendYouFollowedNotification(currentUserId, targetUserId); // To the current user
+                    fetchUpdatedFollowerCount(targetUserId);
+                    NotificationUtil.sendFollowNotification(currentUserId, targetUserId);
+                    NotificationUtil.sendYouFollowedNotification(currentUserId, targetUserId);
                 })
                 .addOnFailureListener(e -> {
-                    Log.e("ShowUser", "Follow failed: " + e.getMessage());
+                    Log.e("ShowUserFragment", "Follow failed: " + e.getMessage());
                 });
-
-
     }
 
     private void unfollowUser() {
         if (user == null || searchedUserUid == null) return;
-
         String currentUserId = user.getUid();
         String targetUserId = searchedUserUid;
-
         DatabaseReference rootRef = FirebaseDatabase.getInstance().getReference("Connecta");
-
-        // Atomic updates
         Map<String, Object> updates = new HashMap<>();
         updates.put("UserConnections/" + currentUserId + "/following/" + targetUserId, null);
         updates.put("UserConnections/" + targetUserId + "/followers/" + currentUserId, null);
         updates.put("ConnectaUsers/" + currentUserId + "/following", ServerValue.increment(-1));
         updates.put("ConnectaUsers/" + targetUserId + "/follower", ServerValue.increment(-1));
-
         rootRef.updateChildren(updates)
                 .addOnSuccessListener(aVoid -> {
                     isFollowing = false;
                     updateConnectButton();
-                    fetchUpdatedFollowerCount(targetUserId);  // Fetch updated count
+                    fetchUpdatedFollowerCount(targetUserId);
                 })
                 .addOnFailureListener(e -> {
-                    Log.e("ShowUser", "Unfollow failed: " + e.getMessage());
+                    Log.e("ShowUserFragment", "Unfollow failed: " + e.getMessage());
                 });
     }
 
@@ -401,20 +399,18 @@ public class ShowUserFragment extends Fragment {
                 .getReference("Connecta")
                 .child("ConnectaUsers")
                 .child(userId);
-
         userRef.addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot snapshot) {
                 Long followersCount = snapshot.child("follower").getValue(Long.class);
                 Long followingCount = snapshot.child("following").getValue(Long.class);
-
                 followersTv.setText(followersCount != null ? String.valueOf(followersCount) : "0");
                 followingTv.setText(followingCount != null ? String.valueOf(followingCount) : "0");
             }
 
             @Override
             public void onCancelled(@NonNull DatabaseError error) {
-                Log.e("ShowUser", "Error fetching updated counts: " + error.getMessage());
+                Log.e("ShowUserFragment", "Error fetching updated counts: " + error.getMessage());
             }
         });
     }
@@ -425,16 +421,51 @@ public class ShowUserFragment extends Fragment {
         args.putString("userId", userId);
         args.putString("connectionType", connectionType);
         fragment.setArguments(args);
-
         requireActivity().getSupportFragmentManager().beginTransaction()
                 .replace(R.id.main_frame_layout, fragment)
                 .addToBackStack(null)
                 .commit();
     }
 
-    // Update displayed follower count
-    private void updateCounter(int change) {
-        int currentFollowers = Integer.parseInt(followersTv.getText().toString());
-        followersTv.setText(String.valueOf(currentFollowers + change));
+    @Override
+    public void onEditPost(Post post) {
+        // Only allow editing if the post belongs to the current user
+        if (user != null && user.getUid().equals(post.getUserId())) {
+            EditPostFragment editPostFragment = new EditPostFragment();
+            Bundle args = new Bundle();
+            args.putSerializable("post", post);
+            editPostFragment.setArguments(args);
+            requireActivity().getSupportFragmentManager().beginTransaction()
+                    .replace(R.id.main_frame_layout, editPostFragment)
+                    .addToBackStack(null)
+                    .commit();
+        }
+    }
+
+    @Override
+    public void onDeletePost(Post post) {
+        // Only allow deletion if the post belongs to the current user
+        if (user != null && user.getUid().equals(post.getUserId())) {
+            Map<String, Object> updates = new HashMap<>();
+            updates.put("Posts/" + post.getPostId(), null);
+            updates.put("UserPosts/" + user.getUid() + "/" + post.getPostId(), null);
+            updates.put("ConnectaUsers/" + user.getUid() + "/posts", ServerValue.increment(-1));
+            FirebaseDatabase.getInstance().getReference("Connecta")
+                    .updateChildren(updates)
+                    .addOnSuccessListener(aVoid -> {
+                        AndroidUtil.showToast(getContext(), "Post deleted successfully");
+                    })
+                    .addOnFailureListener(e -> {
+                        AndroidUtil.showToast(getContext(), "Failed to delete post: " + e.getMessage());
+                    });
+            if ("General".equals(post.getType()) && post.getImageUrl() != null) {
+                FirebaseStorage.getInstance().getReference("post_images")
+                        .child(post.getPostId() + ".jpg")
+                        .delete()
+                        .addOnFailureListener(e -> {
+                            Log.e("ShowUserFragment", "Failed to delete image: " + e.getMessage());
+                        });
+            }
+        }
     }
 }

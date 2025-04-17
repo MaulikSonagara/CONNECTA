@@ -1,5 +1,6 @@
 package com.example.connecta666620de;
 
+import android.app.ProgressDialog;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
@@ -21,6 +22,7 @@ import androidx.fragment.app.Fragment;
 
 import com.bumptech.glide.Glide;
 import com.example.connecta666620de.model.Post;
+import com.example.connecta666620de.utills.AndroidUtil;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
@@ -28,7 +30,6 @@ import com.google.firebase.database.ServerValue;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -49,6 +50,7 @@ public class CreateFragment extends Fragment {
     private FirebaseAuth firebaseAuth;
     private DatabaseReference databaseReference;
     private StorageReference storageReference;
+    private ProgressDialog progressDialog;
 
     public CreateFragment() {}
 
@@ -58,6 +60,9 @@ public class CreateFragment extends Fragment {
         firebaseAuth = FirebaseAuth.getInstance();
         databaseReference = FirebaseDatabase.getInstance().getReference("Connecta");
         storageReference = FirebaseStorage.getInstance().getReference("post_images");
+        progressDialog = new ProgressDialog(requireContext());
+        progressDialog.setMessage("Posting...");
+        progressDialog.setCancelable(false);
     }
 
     @Override
@@ -147,15 +152,19 @@ public class CreateFragment extends Fragment {
         String postId = databaseReference.child("Posts").push().getKey();
         long timestamp = System.currentTimeMillis();
 
+        progressDialog.show();
+
         switch (postType) {
             case "General Image Post":
                 if (selectedImageUri == null) {
-                    Toast.makeText(requireContext(), "Please select an image", Toast.LENGTH_SHORT).show();
+                    progressDialog.dismiss();
+                    AndroidUtil.showToast(requireContext(), "Please select an image");
                     return;
                 }
                 String caption = captionInput.getText().toString().trim();
                 if (caption.isEmpty()) {
-                    Toast.makeText(requireContext(), "Please enter a caption", Toast.LENGTH_SHORT).show();
+                    progressDialog.dismiss();
+                    AndroidUtil.showToast(requireContext(), "Please enter a caption");
                     return;
                 }
                 uploadImageAndSaveGeneralPost(postId, userId, timestamp, caption);
@@ -164,7 +173,8 @@ public class CreateFragment extends Fragment {
             case "Doubt Post":
                 String doubtQuestion = doubtQuestionInput.getText().toString().trim();
                 if (doubtQuestion.isEmpty()) {
-                    Toast.makeText(requireContext(), "Please enter a question", Toast.LENGTH_SHORT).show();
+                    progressDialog.dismiss();
+                    AndroidUtil.showToast(requireContext(), "Please enter a question");
                     return;
                 }
                 saveDoubtPost(postId, userId, timestamp, doubtQuestion);
@@ -179,7 +189,8 @@ public class CreateFragment extends Fragment {
                 String correctAnswer = correctAnswerSpinner.getSelectedItem().toString();
 
                 if (quizQuestion.isEmpty() || option1.isEmpty() || option2.isEmpty() || option3.isEmpty() || option4.isEmpty()) {
-                    Toast.makeText(requireContext(), "Please fill all fields", Toast.LENGTH_SHORT).show();
+                    progressDialog.dismiss();
+                    AndroidUtil.showToast(requireContext(), "Please fill all fields");
                     return;
                 }
                 saveQuizPost(postId, userId, timestamp, quizQuestion, Arrays.asList(option1, option2, option3, option4), correctAnswer);
@@ -198,7 +209,8 @@ public class CreateFragment extends Fragment {
                     });
                 })
                 .addOnFailureListener(e -> {
-                    Toast.makeText(requireContext(), "Failed to upload image: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                    progressDialog.dismiss();
+                    AndroidUtil.showToast(requireContext(), "Failed to upload image: " + e.getMessage());
                 });
     }
 
@@ -220,11 +232,13 @@ public class CreateFragment extends Fragment {
 
         databaseReference.updateChildren(updates)
                 .addOnSuccessListener(aVoid -> {
-                    Toast.makeText(requireContext(), "Post created successfully", Toast.LENGTH_SHORT).show();
+                    progressDialog.dismiss();
+                    AndroidUtil.showToast(requireContext(), "Post created successfully");
                     clearInputs();
                 })
                 .addOnFailureListener(e -> {
-                    Toast.makeText(requireContext(), "Failed to create post: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                    progressDialog.dismiss();
+                    AndroidUtil.showToast(requireContext(), "Failed to create post: " + e.getMessage());
                 });
     }
 

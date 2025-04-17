@@ -10,24 +10,23 @@ import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.PopupMenu;
 import android.widget.TextView;
-
 import androidx.annotation.NonNull;
 import androidx.fragment.app.FragmentActivity;
 import androidx.recyclerview.widget.RecyclerView;
-
 import com.bumptech.glide.Glide;
 import com.example.connecta666620de.CommentFragment;
 import com.example.connecta666620de.R;
 import com.example.connecta666620de.model.Post;
 import com.example.connecta666620de.utills.AndroidUtil;
+import com.example.connecta666620de.utills.NotificationUtil;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.database.FirebaseDatabase;
-
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
-import java.util.ArrayList;
+
 public class PostAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
 
     private static final int TYPE_GENERAL = 0;
@@ -120,13 +119,25 @@ public class PostAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
                 Log.w("PostAdapter", "No image URL at position " + position);
                 generalHolder.image.setImageDrawable(null);
             }
-            generalHolder.optionsMenu.setOnClickListener(v -> showOptionsMenu(v, post));
+            // Show options menu only for own posts
+            if (currentUserId.equals(post.getUserId())) {
+                generalHolder.optionsMenu.setVisibility(View.VISIBLE);
+                generalHolder.optionsMenu.setOnClickListener(v -> showOptionsMenu(v, post));
+            } else {
+                generalHolder.optionsMenu.setVisibility(View.GONE);
+            }
             setupInteractionButtons(generalHolder, post, isLiked);
         } else if (holder instanceof DoubtViewHolder) {
             DoubtViewHolder doubtHolder = (DoubtViewHolder) holder;
             doubtHolder.question.setText(post.getQuestion() != null ? post.getQuestion() : "");
             doubtHolder.timestamp.setText(timestamp);
-            doubtHolder.optionsMenu.setOnClickListener(v -> showOptionsMenu(v, post));
+            // Show options menu only for own posts
+            if (currentUserId.equals(post.getUserId())) {
+                doubtHolder.optionsMenu.setVisibility(View.VISIBLE);
+                doubtHolder.optionsMenu.setOnClickListener(v -> showOptionsMenu(v, post));
+            } else {
+                doubtHolder.optionsMenu.setVisibility(View.GONE);
+            }
             setupInteractionButtons(doubtHolder, post, isLiked);
             Log.d("PostAdapter", "Bound Doubt post at position " + position);
         } else if (holder instanceof QuizViewHolder) {
@@ -147,7 +158,13 @@ public class PostAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
                 quizHolder.option4.setText("");
             }
             quizHolder.timestamp.setText(timestamp);
-            quizHolder.optionsMenu.setOnClickListener(v -> showOptionsMenu(v, post));
+            // Show options menu only for own posts
+            if (currentUserId.equals(post.getUserId())) {
+                quizHolder.optionsMenu.setVisibility(View.VISIBLE);
+                quizHolder.optionsMenu.setOnClickListener(v -> showOptionsMenu(v, post));
+            } else {
+                quizHolder.optionsMenu.setVisibility(View.GONE);
+            }
             setupInteractionButtons(quizHolder, post, isLiked);
 
             // Handle quiz interactions
@@ -163,13 +180,12 @@ public class PostAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
                 quizHolder.option4.setOnClickListener(v -> handleOptionClick(quizHolder, post, options, 3));
             }
         }
-        // Ensure view is visible
         holder.itemView.setVisibility(View.VISIBLE);
         Log.d("PostAdapter", "Set visibility VISIBLE for position " + position);
     }
 
     private void setupInteractionButtons(BaseViewHolder holder, Post post, boolean isLiked) {
-        // Set like button state and count
+        String currentUserId = FirebaseAuth.getInstance().getCurrentUser().getUid();
         holder.likeButton.setSelected(isLiked);
         holder.likeCount.setText(String.valueOf(post.getLikeCount()));
         holder.commentCount.setText(String.valueOf(post.getCommentCount()));
@@ -179,21 +195,29 @@ public class PostAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
             boolean newLikeState = !isLiked;
             holder.likeButton.setSelected(newLikeState);
             List<String> likedBy = post.getLikedBy() != null ? post.getLikedBy() : new ArrayList<>();
-            String userId = FirebaseAuth.getInstance().getCurrentUser().getUid();
 
             if (newLikeState) {
-                if (!likedBy.contains(userId)) {
-                    likedBy.add(userId);
+                if (!likedBy.contains(currentUserId)) {
+                    likedBy.add(currentUserId);
                     post.setLikeCount(post.getLikeCount() + 1);
+                    // Send like notification if not liking own post
+                    if (!currentUserId.equals(post.getUserId())) {
+                        NotificationUtil.sendPostInteractionNotification(
+                                currentUserId,
+                                post.getUserId(),
+                                post.getPostId(),
+                                "like"
+                        );
+                    }
                 }
             } else {
-                likedBy.remove(userId);
+                likedBy.remove(currentUserId);
                 post.setLikeCount(Math.max(0, post.getLikeCount() - 1));
             }
             post.setLikedBy(likedBy);
             holder.likeCount.setText(String.valueOf(post.getLikeCount()));
 
-            // Update Firebase
+            // Update Firebase (both Posts and UserPosts)
             FirebaseDatabase.getInstance().getReference("Connecta/Posts/" + post.getPostId())
                     .child("likedBy").setValue(likedBy);
             FirebaseDatabase.getInstance().getReference("Connecta/Posts/" + post.getPostId())
@@ -224,9 +248,8 @@ public class PostAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
         String selectedOption = "Option " + (selectedIndex + 1);
         String correctAnswer = post.getCorrectAnswer();
         String postId = post.getPostId();
-
         preferences.edit().putString(postId, selectedOption).apply();
-        updateOptionBorders(holder, options, correctAnswer, selectedOption);
+        updateOptionBorders(holder, options, correctAnswer, selectedOption); // Fixed: Changed quizHolder to holder
         disableOptions(holder);
     }
 
@@ -256,6 +279,11 @@ public class PostAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
     }
 
     private void showOptionsMenu(View view, Post post) {
+        // Only show menu for posts owned by the current user
+        String currentUserId = FirebaseAuth.getInstance().getCurrentUser().getUid();
+        if (!currentUserId.equals(post.getUserId())) {
+            return;
+        }
         PopupMenu popup = new PopupMenu(context, view);
         popup.getMenuInflater().inflate(R.menu.post_options_menu, popup.getMenu());
         popup.setOnMenuItemClickListener(item -> {

@@ -7,22 +7,20 @@ import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
-
 import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
-
 import com.example.connecta666620de.adapters.CommentAdapter;
 import com.example.connecta666620de.model.Comment;
 import com.example.connecta666620de.utills.AndroidUtil;
+import com.example.connecta666620de.utills.NotificationUtil;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ServerValue;
 import com.google.firebase.database.ValueEventListener;
-
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -101,28 +99,49 @@ public class CommentFragment extends Fragment {
             return;
         }
 
-        String userId = FirebaseAuth.getInstance().getCurrentUser().getUid();
-        FirebaseDatabase.getInstance().getReference("Connecta/ConnectaUsers/" + userId)
+        String currentUserId = FirebaseAuth.getInstance().getCurrentUser().getUid();
+        FirebaseDatabase.getInstance().getReference("Connecta/ConnectaUsers/" + currentUserId)
                 .child("userName").addListenerForSingleValueEvent(new ValueEventListener() {
                     @Override
                     public void onDataChange(@NonNull DataSnapshot snapshot) {
                         String username = snapshot.getValue(String.class);
                         String commentId = UUID.randomUUID().toString();
-                        Comment comment = new Comment(commentId, postId, userId, username, commentText, System.currentTimeMillis());
+                        Comment comment = new Comment(commentId, postId, currentUserId, username, commentText, System.currentTimeMillis());
 
-                        FirebaseDatabase.getInstance().getReference("Connecta/Comments/" + postId + "/" + commentId)
-                                .setValue(comment)
-                                .addOnSuccessListener(aVoid -> {
-                                    commentInput.setText("");
-                                    // Increment comment count
-                                    FirebaseDatabase.getInstance().getReference("Connecta/Posts/" + postId)
-                                            .child("commentCount").setValue(ServerValue.increment(1));
-                                    FirebaseDatabase.getInstance().getReference("Connecta/UserPosts")
-                                            .child(FirebaseAuth.getInstance().getCurrentUser().getUid())
-                                            .child(postId).child("commentCount").setValue(ServerValue.increment(1));
-                                })
-                                .addOnFailureListener(e -> {
-                                    AndroidUtil.showToast(getContext(), "Failed to post comment: " + e.getMessage());
+                        // Get post owner’s userId to send notification
+                        FirebaseDatabase.getInstance().getReference("Connecta/Posts/" + postId)
+                                .addListenerForSingleValueEvent(new ValueEventListener() {
+                                    @Override
+                                    public void onDataChange(@NonNull DataSnapshot postSnapshot) {
+                                        String postOwnerId = postSnapshot.child("userId").getValue(String.class);
+                                        FirebaseDatabase.getInstance().getReference("Connecta/Comments/" + postId + "/" + commentId)
+                                                .setValue(comment)
+                                                .addOnSuccessListener(aVoid -> {
+                                                    commentInput.setText("");
+                                                    // Increment comment count in both paths
+                                                    FirebaseDatabase.getInstance().getReference("Connecta/Posts/" + postId)
+                                                            .child("commentCount").setValue(ServerValue.increment(1));
+                                                    FirebaseDatabase.getInstance().getReference("Connecta/UserPosts/" + postOwnerId + "/" + postId)
+                                                            .child("commentCount").setValue(ServerValue.increment(1));
+                                                    // Send comment notification if not commenting on own post
+                                                    if (!currentUserId.equals(postOwnerId)) {
+                                                        NotificationUtil.sendPostInteractionNotification(
+                                                                currentUserId,
+                                                                postOwnerId,
+                                                                postId,
+                                                                "comment"
+                                                        );
+                                                    }
+                                                })
+                                                .addOnFailureListener(e -> {
+                                                    AndroidUtil.showToast(getContext(), "Failed to post comment: " + e.getMessage());
+                                                });
+                                    }
+
+                                    @Override
+                                    public void onCancelled(@NonNull DatabaseError error) {
+                                        AndroidUtil.showToast(getContext(), "Failed to fetch post data: " + error.getMessage());
+                                    }
                                 });
                     }
 
