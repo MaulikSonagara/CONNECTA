@@ -14,13 +14,21 @@ import androidx.annotation.NonNull;
 import androidx.fragment.app.FragmentActivity;
 import androidx.recyclerview.widget.RecyclerView;
 import com.bumptech.glide.Glide;
+import com.bumptech.glide.request.RequestOptions;
 import com.example.connecta666620de.CommentFragment;
 import com.example.connecta666620de.R;
 import com.example.connecta666620de.model.Post;
 import com.example.connecta666620de.utills.AndroidUtil;
 import com.example.connecta666620de.utills.NotificationUtil;
+import com.google.android.material.imageview.ShapeableImageView;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.ValueEventListener;
+import com.google.firebase.storage.FirebaseStorage;
+import com.google.firebase.storage.StorageReference;
+
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -102,6 +110,52 @@ public class PostAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
 
         String currentUserId = FirebaseAuth.getInstance().getCurrentUser().getUid();
         boolean isLiked = post.getLikedBy() != null && post.getLikedBy().contains(currentUserId);
+
+        // Fetch and display user details
+        FirebaseDatabase.getInstance().getReference("Connecta/ConnectaUsers/" + post.getUserId())
+                .addListenerForSingleValueEvent(new ValueEventListener() {
+                    @Override
+                    public void onDataChange(@NonNull DataSnapshot snapshot) {
+                        String username = snapshot.child("userName").getValue(String.class);
+                        String profilePicUrl = snapshot.child("image").getValue(String.class);
+                        if (holder instanceof BaseViewHolder) {
+                            BaseViewHolder baseHolder = (BaseViewHolder) holder;
+                            baseHolder.username.setText(username != null ? "@" + username : "Unknown");
+                            if (profilePicUrl != null && !profilePicUrl.isEmpty()) {
+                                if (profilePicUrl.startsWith("gs://")){
+                                    FirebaseStorage storage = FirebaseStorage.getInstance();
+                                    StorageReference storageRef = storage.getReferenceFromUrl(profilePicUrl);
+
+                                    storageRef.getDownloadUrl().addOnSuccessListener(uri -> {
+                                        Log.d("GlideDebug", "Converted URL: " + uri.toString());
+                                        Glide.with(context)
+                                                .load(uri.toString()) // Load HTTP URL
+                                                .apply(RequestOptions.circleCropTransform())
+                                                .placeholder(R.drawable.person_icon)
+                                                .error(R.drawable.person_icon)
+                                                .into(baseHolder.avatar);
+                                    }).addOnFailureListener(e -> {
+                                        Log.e("GlideDebug", "Failed to get download URL: " + e.getMessage());
+                                        baseHolder.avatar.setImageResource(R.drawable.person_icon);
+                                    });
+                                }
+                            } else {
+                                Glide.with(context)
+                                        .load(profilePicUrl)
+                                        .apply(RequestOptions.circleCropTransform())
+                                        .placeholder(R.drawable.person_icon)
+                                        .error(R.drawable.person_icon)
+                                        .into(baseHolder.avatar);
+                                Log.d("GlideDebug", "Loading image: " + profilePicUrl);
+                            }
+                        }
+                    }
+
+                    @Override
+                    public void onCancelled(@NonNull DatabaseError error) {
+                        Log.e("PostAdapter", "Failed to fetch user data for post " + post.getPostId() + ": " + error.getMessage());
+                    }
+                });
 
         if (holder instanceof GeneralViewHolder) {
             GeneralViewHolder generalHolder = (GeneralViewHolder) holder;
@@ -249,7 +303,7 @@ public class PostAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
         String correctAnswer = post.getCorrectAnswer();
         String postId = post.getPostId();
         preferences.edit().putString(postId, selectedOption).apply();
-        updateOptionBorders(holder, options, correctAnswer, selectedOption); // Fixed: Changed quizHolder to holder
+        updateOptionBorders(holder, options, correctAnswer, selectedOption);
         disableOptions(holder);
     }
 
@@ -313,7 +367,8 @@ public class PostAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
 
     static abstract class BaseViewHolder extends RecyclerView.ViewHolder {
         ImageView optionsMenu, likeButton, commentButton, shareButton;
-        TextView timestamp, likeCount, commentCount;
+        ShapeableImageView avatar;
+        TextView timestamp, likeCount, commentCount, username;
 
         public BaseViewHolder(@NonNull View itemView) {
             super(itemView);
@@ -324,6 +379,8 @@ public class PostAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
             likeCount = itemView.findViewById(R.id.like_count);
             commentCount = itemView.findViewById(R.id.comment_count);
             timestamp = itemView.findViewById(R.id.post_timestamp);
+            avatar = itemView.findViewById(R.id.post_user_avatar);
+            username = itemView.findViewById(R.id.post_username);
         }
     }
 
