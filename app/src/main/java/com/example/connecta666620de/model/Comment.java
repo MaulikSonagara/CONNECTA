@@ -8,17 +8,19 @@ public class Comment implements Serializable {
     private String userId;
     private String username;
     private String commentText;
+    private String imageUrl;
     private long timestamp;
 
     public Comment() {}
 
-    public Comment(String commentId, String postId, String userId, String username, String commentText, long timestamp) {
+    public Comment(String commentId, String postId, String userId, String username, String commentText, long timestamp, String imageUrl) {
         this.commentId = commentId;
         this.postId = postId;
         this.userId = userId;
         this.username = username;
         this.commentText = commentText;
         this.timestamp = timestamp;
+        this.imageUrl = imageUrl;
     }
 
     // Getters and setters
@@ -34,4 +36,12 @@ public class Comment implements Serializable {
     public void setCommentText(String commentText) { this.commentText = commentText; }
     public long getTimestamp() { return timestamp; }
     public void setTimestamp(long timestamp) { this.timestamp = timestamp; }
+
+    public void setImageUrl(String imageUrl) {
+        this.imageUrl = imageUrl;
+    }
+    public String getImageUrl() {
+        return imageUrl;
+    }
+
 }

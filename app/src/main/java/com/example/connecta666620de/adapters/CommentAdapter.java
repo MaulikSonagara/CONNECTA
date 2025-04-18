@@ -4,13 +4,18 @@ import android.content.Context;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageView;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.bumptech.glide.Glide;
+import com.bumptech.glide.request.RequestOptions;
 import com.example.connecta666620de.R;
 import com.example.connecta666620de.model.Comment;
+import com.google.android.material.imageview.ShapeableImageView;
+import com.google.firebase.storage.FirebaseStorage;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -40,6 +45,29 @@ public class CommentAdapter extends RecyclerView.Adapter<CommentAdapter.ViewHold
         holder.username.setText("@" + comment.getUsername());
         holder.commentText.setText(comment.getCommentText());
         holder.timestamp.setText(formatTimestamp(comment.getTimestamp()));
+        String profileImageUrl = comment.getImageUrl();
+
+        if (profileImageUrl != null && !profileImageUrl.isEmpty()) {
+
+            if (profileImageUrl.startsWith("gs://")) {
+                FirebaseStorage.getInstance().getReferenceFromUrl(profileImageUrl)
+                        .getDownloadUrl()
+                        .addOnSuccessListener(uri -> Glide.with(context)
+                                .load(uri.toString())
+                                .apply(RequestOptions.circleCropTransform())
+                                .placeholder(R.drawable.person_icon)
+                                .error(R.drawable.person_icon)
+                                .into(holder.imageView))
+                        .addOnFailureListener(e -> holder.imageView.setImageResource(R.drawable.person_icon));
+            } else {
+                Glide.with(context)
+                        .load(profileImageUrl)
+                        .apply(RequestOptions.circleCropTransform())
+                        .placeholder(R.drawable.person_icon)
+                        .error(R.drawable.person_icon)
+                        .into(holder.imageView);
+            }
+        }
     }
 
     @Override
@@ -54,9 +82,11 @@ public class CommentAdapter extends RecyclerView.Adapter<CommentAdapter.ViewHold
 
     static class ViewHolder extends RecyclerView.ViewHolder {
         TextView username, commentText, timestamp;
+        ShapeableImageView imageView;
 
         public ViewHolder(@NonNull View itemView) {
             super(itemView);
+            imageView = itemView.findViewById(R.id.comment_user_image);
             username = itemView.findViewById(R.id.comment_username);
             commentText = itemView.findViewById(R.id.comment_text);
             timestamp = itemView.findViewById(R.id.comment_timestamp);

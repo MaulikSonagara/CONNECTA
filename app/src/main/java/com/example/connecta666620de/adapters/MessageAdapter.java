@@ -1,6 +1,12 @@
 package com.example.connecta666620de.adapters;
 
 import android.content.Context;
+import android.content.Intent;
+import android.text.SpannableString;
+import android.text.Spanned;
+import android.text.method.LinkMovementMethod;
+import android.text.style.ClickableSpan;
+import android.util.Log;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -11,15 +17,18 @@ import android.widget.LinearLayout;
 import android.widget.PopupWindow;
 import android.widget.TextView;
 
-
 import androidx.annotation.NonNull;
+import androidx.fragment.app.FragmentActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.request.RequestOptions;
+import com.example.connecta666620de.MainActivity;
 import com.example.connecta666620de.R;
+import com.example.connecta666620de.ShowPostFragment;
 import com.example.connecta666620de.model.Chat;
+import com.example.connecta666620de.utills.AndroidUtil;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.storage.FirebaseStorage;
 
@@ -147,7 +156,42 @@ public class MessageAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
             Chat chat = (Chat) item;
             MessageViewHolder msgHolder = (MessageViewHolder) holder;
 
-            msgHolder.messageText.setText(chat.getMessage());
+            String messageText = chat.getMessage();
+            // Handle shared post messages
+            if (messageText != null && messageText.contains("Post by @")) {
+                String[] parts = messageText.split(": ");
+                if (parts.length == 2) {
+                    String prefix = parts[0];
+                    String postId = parts[1].trim();
+                    SpannableString spannable = new SpannableString(messageText);
+                    ClickableSpan clickableSpan = new ClickableSpan() {
+                        @Override
+                        public void onClick(@NonNull View widget) {
+                            try {
+                                Intent intent = new Intent(mContext, MainActivity.class);
+                                intent.putExtra("action", "show_post");
+                                intent.putExtra("post_id", postId);
+                                intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+                                mContext.startActivity(intent);
+                                Log.d("MessageAdapter", "Starting MainActivity to show postId: " + postId);
+                            } catch (Exception e) {
+                                AndroidUtil.showToast(mContext, "Failed to open post");
+                                Log.e("MessageAdapter", "Error starting MainActivity: " + e.getMessage());
+                            }
+                        }
+                    };
+                    int start = messageText.indexOf(postId);
+                    int end = start + postId.length();
+                    spannable.setSpan(clickableSpan, start, end, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+                    msgHolder.messageText.setText(spannable);
+                    msgHolder.messageText.setMovementMethod(LinkMovementMethod.getInstance());
+                } else {
+                    msgHolder.messageText.setText(messageText);
+                }
+            } else {
+                msgHolder.messageText.setText(messageText);
+            }
+
             msgHolder.timeText.setText(formatTime(chat.getTimestamp()));
 
             String currentUserId = FirebaseAuth.getInstance().getCurrentUser().getUid();

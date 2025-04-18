@@ -105,8 +105,9 @@ public class CommentFragment extends Fragment {
                     @Override
                     public void onDataChange(@NonNull DataSnapshot snapshot) {
                         String username = snapshot.getValue(String.class);
+                        String imageUrl = "gs://blooddonation-bf35b.appspot.com/profile_pic/"+currentUserId;
                         String commentId = UUID.randomUUID().toString();
-                        Comment comment = new Comment(commentId, postId, currentUserId, username, commentText, System.currentTimeMillis());
+                        Comment comment = new Comment(commentId, postId, currentUserId, username, commentText, System.currentTimeMillis(), imageUrl);
 
                         // Get post owner’s userId to send notification
                         FirebaseDatabase.getInstance().getReference("Connecta/Posts/" + postId)

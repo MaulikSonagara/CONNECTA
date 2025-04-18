@@ -43,6 +43,7 @@ public class Notification {
     public void setNotificationId(String notificationId) { this.notificationId = notificationId; }
     public String getSenderId() { return senderId; }
     public String getReceiverId() { return receiverId; }
+    public void setReceiverId(String receiverId) { this.receiverId = receiverId; }
     public String getType() { return type; }
     public String getContent() { return content; }
     public String getPostId() { return postId; }

@@ -90,10 +90,6 @@
                 android:layout_marginStart="4dp" />
         </LinearLayout>
 
-
-
-
-
     </LinearLayout>
 
 </RelativeLayout>

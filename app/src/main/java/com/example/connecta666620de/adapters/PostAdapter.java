@@ -10,13 +10,16 @@ import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.PopupMenu;
 import android.widget.TextView;
+
 import androidx.annotation.NonNull;
 import androidx.fragment.app.FragmentActivity;
 import androidx.recyclerview.widget.RecyclerView;
+
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.request.RequestOptions;
 import com.example.connecta666620de.CommentFragment;
 import com.example.connecta666620de.R;
+import com.example.connecta666620de.SharePostFragment;
 import com.example.connecta666620de.model.Post;
 import com.example.connecta666620de.utills.AndroidUtil;
 import com.example.connecta666620de.utills.NotificationUtil;
@@ -30,6 +33,7 @@ import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
+
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -150,6 +154,9 @@ public class PostAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
                             } else {
                                 baseHolder.avatar.setImageResource(R.drawable.person_icon);
                             }
+
+                            // Bind share button with username
+                            setupInteractionButtons(baseHolder, post, isLiked, username);
                         }
                     }
 
@@ -197,7 +204,6 @@ public class PostAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
             } else {
                 generalHolder.optionsMenu.setVisibility(View.GONE);
             }
-            setupInteractionButtons(generalHolder, post, isLiked);
         } else if (holder instanceof DoubtViewHolder) {
             DoubtViewHolder doubtHolder = (DoubtViewHolder) holder;
             doubtHolder.question.setText(post.getQuestion() != null ? post.getQuestion() : "");
@@ -209,8 +215,6 @@ public class PostAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
             } else {
                 doubtHolder.optionsMenu.setVisibility(View.GONE);
             }
-            setupInteractionButtons(doubtHolder, post, isLiked);
-            Log.d("PostAdapter", "Bound Doubt post at position " + position);
         } else if (holder instanceof QuizViewHolder) {
             QuizViewHolder quizHolder = (QuizViewHolder) holder;
             quizHolder.question.setText(post.getQuestion() != null ? post.getQuestion() : "");
@@ -236,7 +240,6 @@ public class PostAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
             } else {
                 quizHolder.optionsMenu.setVisibility(View.GONE);
             }
-            setupInteractionButtons(quizHolder, post, isLiked);
 
             // Handle quiz interactions
             String postId = post.getPostId();
@@ -255,7 +258,7 @@ public class PostAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
         Log.d("PostAdapter", "Set visibility VISIBLE for position " + position);
     }
 
-    private void setupInteractionButtons(BaseViewHolder holder, Post post, boolean isLiked) {
+    private void setupInteractionButtons(BaseViewHolder holder, Post post, boolean isLiked, String username) {
         String currentUserId = FirebaseAuth.getInstance().getCurrentUser().getUid();
         holder.likeButton.setSelected(isLiked);
         holder.likeCount.setText(String.valueOf(post.getLikeCount()));
@@ -311,8 +314,11 @@ public class PostAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
                     .commit();
         });
 
-        // Share button (disabled for now)
-        holder.shareButton.setOnClickListener(v -> AndroidUtil.showToast(context, "Share feature coming soon!"));
+        // Share button click
+        holder.shareButton.setOnClickListener(v -> {
+            SharePostFragment fragment = SharePostFragment.newInstance(post.getPostId(), post.getUserId(), username != null ? username : "Unknown");
+            fragment.show(((FragmentActivity) context).getSupportFragmentManager(), "SharePostFragment");
+        });
     }
 
     private void handleOptionClick(QuizViewHolder holder, Post post, List<String> options, int selectedIndex) {

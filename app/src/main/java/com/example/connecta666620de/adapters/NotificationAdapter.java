@@ -101,6 +101,9 @@ public class NotificationAdapter extends RecyclerView.Adapter<NotificationAdapte
                                 case "comment":
                                     notificationText = userName + " commented on your post";
                                     break;
+                                case "share":
+                                    notificationText = notification.getContent(); // e.g., "UserA shared a post by UserB"
+                                    break;
                                 default:
                                     notificationText = notification.getContent();
                             }
@@ -140,7 +143,7 @@ public class NotificationAdapter extends RecyclerView.Adapter<NotificationAdapte
             FragmentManager fragmentManager = ((FragmentActivity) context).getSupportFragmentManager();
             fragmentManager.beginTransaction()
                     .replace(R.id.main_frame_layout, showUserFragment)
-                    .addToBackStack("notification_to_profile") // Optional back stack name
+                    .addToBackStack("notification_to_profile")
                     .commit();
         });
     }
@@ -198,7 +201,7 @@ public class NotificationAdapter extends RecyclerView.Adapter<NotificationAdapte
                 storageRef.getDownloadUrl().addOnSuccessListener(uri -> {
                     Log.d("GlideDebug", "Converted URL: " + uri.toString());
                     Glide.with(context)
-                            .load(uri.toString()) // Load HTTP URL
+                            .load(uri.toString())
                             .apply(RequestOptions.circleCropTransform())
                             .placeholder(R.drawable.person_icon)
                             .error(R.drawable.person_icon)

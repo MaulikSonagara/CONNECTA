@@ -66,6 +66,7 @@ dependencies {
 
 
     implementation ("androidx.cardview:cardview:1.0.0")
+    implementation ("androidx.activity:activity:1.8.0")
 
 
 
