@@ -1,161 +1,245 @@
 package com.example.connecta666620de;
 
-import android.annotation.SuppressLint;
+import android.net.Uri;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
-import android.widget.LinearLayout;
 import android.widget.Spinner;
-import android.widget.ArrayAdapter;
-import android.widget.Toast;
-
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
+import android.widget.TextView;
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.fragment.app.Fragment;
-
 import com.example.connecta666620de.model.Post;
+import com.example.connecta666620de.model.Skill;
 import com.example.connecta666620de.utills.AndroidUtil;
-import com.google.firebase.database.DatabaseReference;
+import com.google.android.material.chip.Chip;
+import com.google.android.material.chip.ChipGroup;
+import com.google.android.material.textfield.TextInputEditText;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.FirebaseDatabase;
-
-import java.util.Arrays;
-import java.util.HashMap;
+import com.google.firebase.database.ValueEventListener;
+import com.google.firebase.storage.FirebaseStorage;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 public class EditPostFragment extends Fragment {
 
-    private LinearLayout generalInputs, doubtInputs, quizInputs;
-    private EditText captionInput, doubtQuestionInput, quizQuestionInput;
-    private EditText option1Input, option2Input, option3Input, option4Input;
+    private TextView postTypeText;
+    private EditText postCaption, postQuestion, option1, option2, option3, option4;
+    private Button imagePickerButton, savePostButton, addSkillTagButton;
     private Spinner correctAnswerSpinner;
-    private Button updatePostBtn;
+    private ChipGroup skillTagsChipGroup;
+    private TextInputEditText skillTagInput;
     private Post post;
+    private Uri imageUri;
+    private List<String> skillTags;
+    private List<Skill> userSkills;
 
-    public EditPostFragment() {}
+    private final ActivityResultLauncher<String> imagePicker = registerForActivityResult(
+            new ActivityResultContracts.GetContent(),
+            uri -> {
+                if (uri != null) {
+                    imageUri = uri;
+                    AndroidUtil.showToast(getContext(), "Image selected");
+                }
+            });
 
-    @Override
-    public void onCreate(@Nullable Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        if (getArguments() != null) {
-            post = (Post) getArguments().getSerializable("post");
-        }
-    }
-
-    @SuppressLint("MissingInflatedId")
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_edit_post, container, false);
 
-        generalInputs = view.findViewById(R.id.general_inputs);
-        doubtInputs = view.findViewById(R.id.doubt_inputs);
-        quizInputs = view.findViewById(R.id.quiz_inputs);
-        captionInput = view.findViewById(R.id.caption_input);
-        doubtQuestionInput = view.findViewById(R.id.doubt_question_input);
-        quizQuestionInput = view.findViewById(R.id.quiz_question_input);
-        option1Input = view.findViewById(R.id.option1_input);
-        option2Input = view.findViewById(R.id.option2_input);
-        option3Input = view.findViewById(R.id.option3_input);
-        option4Input = view.findViewById(R.id.option4_input);
+        // Initialize views
+        postTypeText = view.findViewById(R.id.post_type_text);
+        postCaption = view.findViewById(R.id.post_caption);
+        imagePickerButton = view.findViewById(R.id.image_picker_button);
+        postQuestion = view.findViewById(R.id.post_question);
+        option1 = view.findViewById(R.id.option1);
+        option2 = view.findViewById(R.id.option2);
+        option3 = view.findViewById(R.id.option3);
+        option4 = view.findViewById(R.id.option4);
         correctAnswerSpinner = view.findViewById(R.id.correct_answer_spinner);
-        updatePostBtn = view.findViewById(R.id.update_post_btn);
+        savePostButton = view.findViewById(R.id.save_post_button);
+        skillTagsChipGroup = view.findViewById(R.id.skill_tags_chip_group);
+        skillTagInput = view.findViewById(R.id.skill_tag_input);
+        addSkillTagButton = view.findViewById(R.id.add_skill_tag_button);
 
-        // Setup UI based on post type
-        setupUI();
+        // Initialize skill tags
+        skillTags = new ArrayList<>();
+        userSkills = new ArrayList<>();
 
-        updatePostBtn.setOnClickListener(v -> validateAndUpdatePost());
+        // Get post from arguments
+        Bundle args = getArguments();
+        if (args != null) {
+            post = (Post) args.getSerializable("post");
+            if (post != null) {
+                populateFields();
+            }
+        }
+
+        // Fetch user skills
+        fetchUserSkills();
+
+        // Add skill tag
+        addSkillTagButton.setOnClickListener(v -> {
+            String skillTitle = skillTagInput.getText().toString().trim();
+            if (!skillTitle.isEmpty() && !skillTags.contains(skillTitle)) {
+                skillTags.add(skillTitle);
+                addChip(skillTitle);
+                skillTagInput.setText("");
+                // Optionally add to user skills
+                addSkillToUser(skillTitle);
+            } else {
+                AndroidUtil.showToast(getContext(), "Enter a unique skill title");
+            }
+        });
+
+        // Set up save button
+        savePostButton.setOnClickListener(v -> savePost());
 
         return view;
     }
 
-    private void setupUI() {
-        generalInputs.setVisibility(View.GONE);
-        doubtInputs.setVisibility(View.GONE);
-        quizInputs.setVisibility(View.GONE);
-
-        switch (post.getType()) {
-            case "General":
-                generalInputs.setVisibility(View.VISIBLE);
-                captionInput.setText(post.getCaption());
-                break;
-            case "Doubt":
-                doubtInputs.setVisibility(View.VISIBLE);
-                doubtQuestionInput.setText(post.getQuestion());
-                break;
-            case "Quiz":
-                quizInputs.setVisibility(View.VISIBLE);
-                quizQuestionInput.setText(post.getQuestion());
-                List<String> options = post.getOptions();
-                if (options != null && options.size() >= 4) {
-                    option1Input.setText(options.get(0));
-                    option2Input.setText(options.get(1));
-                    option3Input.setText(options.get(2));
-                    option4Input.setText(options.get(3));
-                }
-                setupCorrectAnswerSpinner(post.getCorrectAnswer());
-                break;
+    private void populateFields() {
+        postTypeText.setText(post.getType());
+        if (post.getType().equals("General")) {
+            postCaption.setVisibility(View.VISIBLE);
+            postCaption.setText(post.getCaption());
+            imagePickerButton.setVisibility(View.VISIBLE);
+        } else if (post.getType().equals("Doubt")) {
+            postQuestion.setVisibility(View.VISIBLE);
+            postQuestion.setText(post.getQuestion());
+        } else if (post.getType().equals("Quiz")) {
+            postQuestion.setVisibility(View.VISIBLE);
+            postQuestion.setText(post.getQuestion());
+            option1.setVisibility(View.VISIBLE);
+            option2.setVisibility(View.VISIBLE);
+            option3.setVisibility(View.VISIBLE);
+            option4.setVisibility(View.VISIBLE);
+            correctAnswerSpinner.setVisibility(View.VISIBLE);
+            if (post.getOptions() != null && post.getOptions().size() >= 4) {
+                option1.setText(post.getOptions().get(0));
+                option2.setText(post.getOptions().get(1));
+                option3.setText(post.getOptions().get(2));
+                option4.setText(post.getOptions().get(3));
+            }
+            ArrayAdapter<String> adapter = new ArrayAdapter<>(getContext(),
+                    android.R.layout.simple_spinner_item,
+                    new String[]{"Option 1", "Option 2", "Option 3", "Option 4"});
+            adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+            correctAnswerSpinner.setAdapter(adapter);
+            if (post.getCorrectAnswer() != null) {
+                correctAnswerSpinner.setSelection(Integer.parseInt(post.getCorrectAnswer().replace("Option ", "")) - 1);
+            }
+        }
+        // Populate skill tags
+        skillTags.addAll(post.getSkillTags());
+        for (String tag : skillTags) {
+            addChip(tag);
         }
     }
 
-    private void setupCorrectAnswerSpinner(String currentAnswer) {
-        List<String> answerOptions = Arrays.asList("Option 1", "Option 2", "Option 3", "Option 4");
-        ArrayAdapter<String> answerAdapter = new ArrayAdapter<>(requireContext(), android.R.layout.simple_spinner_item, answerOptions);
-        answerAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-        correctAnswerSpinner.setAdapter(answerAdapter);
-        int position = answerOptions.indexOf(currentAnswer);
-        if (position >= 0) {
-            correctAnswerSpinner.setSelection(position);
+    private void fetchUserSkills() {
+        String userId = FirebaseAuth.getInstance().getCurrentUser().getUid();
+        FirebaseDatabase.getInstance().getReference("Connecta/ConnectaUsers/" + userId + "/skills")
+                .addListenerForSingleValueEvent(new ValueEventListener() {
+                    @Override
+                    public void onDataChange(DataSnapshot snapshot) {
+                        userSkills.clear();
+                        for (DataSnapshot skillSnapshot : snapshot.getChildren()) {
+                            Skill skill = skillSnapshot.getValue(Skill.class);
+                            if (skill != null && !skillTags.contains(skill.getTitle())) {
+                                userSkills.add(skill);
+                                addChip(skill.getTitle());
+                            }
+                        }
+                    }
+                    @Override
+                    public void onCancelled(DatabaseError error) {
+                        Log.e("EditPostFragment", "Failed to fetch user skills: " + error.getMessage());
+                    }
+                });
+    }
+
+    private void addChip(String skillTitle) {
+        Chip chip = new Chip(getContext());
+        chip.setText(skillTitle);
+        chip.setCloseIconVisible(true);
+        chip.setOnCloseIconClickListener(v -> {
+            skillTags.remove(skillTitle);
+            skillTagsChipGroup.removeView(chip);
+        });
+        skillTagsChipGroup.addView(chip);
+    }
+
+    private void addSkillToUser(String skillTitle) {
+        String userId = FirebaseAuth.getInstance().getCurrentUser().getUid();
+        FirebaseDatabase.getInstance().getReference("Connecta/ConnectaUsers/" + userId + "/skills")
+                .push().setValue(new Skill(skillTitle, "", "", ""));
+    }
+
+    private void savePost() {
+        String caption = postCaption.getText().toString().trim();
+        String question = postQuestion.getText().toString().trim();
+        List<String> options = new ArrayList<>();
+        String correctAnswer = null;
+
+        if (post.getType().equals("Quiz")) {
+            if (option1.getText().toString().trim().isEmpty() || option2.getText().toString().trim().isEmpty() ||
+                    option3.getText().toString().trim().isEmpty() || option4.getText().toString().trim().isEmpty()) {
+                AndroidUtil.showToast(getContext(), "All quiz options are required");
+                return;
+            }
+            options.add(option1.getText().toString().trim());
+            options.add(option2.getText().toString().trim());
+            options.add(option3.getText().toString().trim());
+            options.add(option4.getText().toString().trim());
+            correctAnswer = "Option " + (correctAnswerSpinner.getSelectedItemPosition() + 1);
+        }
+
+        if ((post.getType().equals("General") && caption.isEmpty() && imageUri == null && post.getImageUrl() == null) ||
+                (post.getType().equals("Doubt") && question.isEmpty()) ||
+                (post.getType().equals("Quiz") && question.isEmpty())) {
+            AndroidUtil.showToast(getContext(), "Please fill in required fields");
+            return;
+        }
+
+        post.setCaption(caption);
+        post.setQuestion(question);
+        post.setOptions(options);
+        post.setCorrectAnswer(correctAnswer);
+        post.setSkillTags(skillTags);
+
+        if (imageUri != null && post.getType().equals("General")) {
+            FirebaseStorage.getInstance().getReference("post_images/" + post.getPostId() + ".jpg")
+                    .putFile(imageUri)
+                    .addOnSuccessListener(taskSnapshot -> {
+                        taskSnapshot.getStorage().getDownloadUrl().addOnSuccessListener(uri -> {
+                            post.setImageUrl(uri.toString());
+                            updatePost(post);
+                        });
+                    })
+                    .addOnFailureListener(e -> {
+                        AndroidUtil.showToast(getContext(), "Failed to upload image");
+                    });
+        } else {
+            updatePost(post);
         }
     }
 
-    private void validateAndUpdatePost() {
-        Map<String, Object> updates = new HashMap<>();
-        String userId = post.getUserId();
-
-        switch (post.getType()) {
-            case "General":
-                String caption = captionInput.getText().toString().trim();
-                if (caption.isEmpty()) {
-                    Toast.makeText(requireContext(), "Please enter a caption", Toast.LENGTH_SHORT).show();
-                    return;
-                }
-                post.setCaption(caption);
-                break;
-            case "Doubt":
-                String question = doubtQuestionInput.getText().toString().trim();
-                if (question.isEmpty()) {
-                    Toast.makeText(requireContext(), "Please enter a question", Toast.LENGTH_SHORT).show();
-                    return;
-                }
-                post.setQuestion(question);
-                break;
-            case "Quiz":
-                String quizQuestion = quizQuestionInput.getText().toString().trim();
-                String option1 = option1Input.getText().toString().trim();
-                String option2 = option2Input.getText().toString().trim();
-                String option3 = option3Input.getText().toString().trim();
-                String option4 = option4Input.getText().toString().trim();
-                String correctAnswer = correctAnswerSpinner.getSelectedItem().toString();
-
-                if (quizQuestion.isEmpty() || option1.isEmpty() || option2.isEmpty() || option3.isEmpty() || option4.isEmpty()) {
-                    Toast.makeText(requireContext(), "Please fill all fields", Toast.LENGTH_SHORT).show();
-                    return;
-                }
-                post.setQuestion(quizQuestion);
-                post.setOptions(Arrays.asList(option1, option2, option3, option4));
-                post.setCorrectAnswer(correctAnswer);
-                break;
-        }
-
-        // Update Firebase
-        updates.put("Posts/" + post.getPostId(), post);
-        updates.put("UserPosts/" + userId + "/" + post.getPostId(), post);
-
+    private void updatePost(Post post) {
+        String userId = FirebaseAuth.getInstance().getCurrentUser().getUid();
         FirebaseDatabase.getInstance().getReference("Connecta")
-                .updateChildren(updates)
+                .updateChildren(new java.util.HashMap<String, Object>() {{
+                    put("Posts/" + post.getPostId(), post);
+                    put("UserPosts/" + userId + "/" + post.getPostId(), post);
+                }})
                 .addOnSuccessListener(aVoid -> {
                     AndroidUtil.showToast(getContext(), "Post updated successfully");
                     requireActivity().getSupportFragmentManager().popBackStack();

@@ -20,6 +20,8 @@ import com.example.connecta666620de.R;
 import com.example.connecta666620de.model.Post;
 import com.example.connecta666620de.utills.AndroidUtil;
 import com.example.connecta666620de.utills.NotificationUtil;
+import com.google.android.material.chip.Chip;
+import com.google.android.material.chip.ChipGroup;
 import com.google.android.material.imageview.ShapeableImageView;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.database.DataSnapshot;
@@ -28,7 +30,6 @@ import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
-
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -122,14 +123,13 @@ public class PostAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
                             BaseViewHolder baseHolder = (BaseViewHolder) holder;
                             baseHolder.username.setText(username != null ? "@" + username : "Unknown");
                             if (profilePicUrl != null && !profilePicUrl.isEmpty()) {
-                                if (profilePicUrl.startsWith("gs://")){
+                                if (profilePicUrl.startsWith("gs://")) {
                                     FirebaseStorage storage = FirebaseStorage.getInstance();
                                     StorageReference storageRef = storage.getReferenceFromUrl(profilePicUrl);
-
                                     storageRef.getDownloadUrl().addOnSuccessListener(uri -> {
                                         Log.d("GlideDebug", "Converted URL: " + uri.toString());
                                         Glide.with(context)
-                                                .load(uri.toString()) // Load HTTP URL
+                                                .load(uri.toString())
                                                 .apply(RequestOptions.circleCropTransform())
                                                 .placeholder(R.drawable.person_icon)
                                                 .error(R.drawable.person_icon)
@@ -138,15 +138,17 @@ public class PostAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
                                         Log.e("GlideDebug", "Failed to get download URL: " + e.getMessage());
                                         baseHolder.avatar.setImageResource(R.drawable.person_icon);
                                     });
+                                } else {
+                                    Glide.with(context)
+                                            .load(profilePicUrl)
+                                            .apply(RequestOptions.circleCropTransform())
+                                            .placeholder(R.drawable.person_icon)
+                                            .error(R.drawable.person_icon)
+                                            .into(baseHolder.avatar);
+                                    Log.d("GlideDebug", "Loading image: " + profilePicUrl);
                                 }
                             } else {
-                                Glide.with(context)
-                                        .load(profilePicUrl)
-                                        .apply(RequestOptions.circleCropTransform())
-                                        .placeholder(R.drawable.person_icon)
-                                        .error(R.drawable.person_icon)
-                                        .into(baseHolder.avatar);
-                                Log.d("GlideDebug", "Loading image: " + profilePicUrl);
+                                baseHolder.avatar.setImageResource(R.drawable.person_icon);
                             }
                         }
                     }
@@ -156,6 +158,21 @@ public class PostAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
                         Log.e("PostAdapter", "Failed to fetch user data for post " + post.getPostId() + ": " + error.getMessage());
                     }
                 });
+
+        // Bind skill tags
+        if (holder instanceof BaseViewHolder) {
+            BaseViewHolder baseHolder = (BaseViewHolder) holder;
+            baseHolder.skillTagsChipGroup.removeAllViews();
+            if (post.getSkillTags() != null && !post.getSkillTags().isEmpty()) {
+                for (String tag : post.getSkillTags()) {
+                    Chip chip = new Chip(context);
+                    chip.setText(tag);
+                    chip.setClickable(false);
+                    chip.setCheckable(false);
+                    baseHolder.skillTagsChipGroup.addView(chip);
+                }
+            }
+        }
 
         if (holder instanceof GeneralViewHolder) {
             GeneralViewHolder generalHolder = (GeneralViewHolder) holder;
@@ -369,6 +386,7 @@ public class PostAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
         ImageView optionsMenu, likeButton, commentButton, shareButton;
         ShapeableImageView avatar;
         TextView timestamp, likeCount, commentCount, username;
+        ChipGroup skillTagsChipGroup;
 
         public BaseViewHolder(@NonNull View itemView) {
             super(itemView);
@@ -381,6 +399,7 @@ public class PostAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
             timestamp = itemView.findViewById(R.id.post_timestamp);
             avatar = itemView.findViewById(R.id.post_user_avatar);
             username = itemView.findViewById(R.id.post_username);
+            skillTagsChipGroup = itemView.findViewById(R.id.skill_tags_chip_group);
         }
     }
 

@@ -51,6 +51,13 @@
             android:textSize="16sp"
             android:layout_marginBottom="4dp" />
 
+        <com.google.android.material.chip.ChipGroup
+            android:id="@+id/skill_tags_chip_group"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            app:chipSpacing="4dp" />
+
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"

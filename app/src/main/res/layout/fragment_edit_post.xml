@@ -1,115 +1,114 @@
 <?xml version="1.0" encoding="utf-8"?>
-<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:orientation="vertical"
+    android:padding="16dp">
 
-    <LinearLayout
+    <!-- Post Type (Read-only) -->
+    <TextView
+        android:id="@+id/post_type_text"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:padding="16dp">
+        android:textSize="16sp" />
 
-        <!-- General Post Inputs -->
-        <LinearLayout
-            android:id="@+id/general_inputs"
+    <!-- Caption for General Post -->
+    <EditText
+        android:id="@+id/post_caption"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Enter caption"
+        android:visibility="gone" />
+
+    <!-- Image Picker for General Post -->
+    <Button
+        android:id="@+id/image_picker_button"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Change Image"
+        android:visibility="gone" />
+
+    <!-- Question for Doubt/Quiz Post -->
+    <EditText
+        android:id="@+id/post_question"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Enter question"
+        android:visibility="gone" />
+
+    <!-- Options for Quiz Post -->
+    <EditText
+        android:id="@+id/option1"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Option 1"
+        android:visibility="gone" />
+    <EditText
+        android:id="@+id/option2"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Option 2"
+        android:visibility="gone" />
+    <EditText
+        android:id="@+id/option3"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Option 3"
+        android:visibility="gone" />
+    <EditText
+        android:id="@+id/option4"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Option 4"
+        android:visibility="gone" />
+
+    <!-- Correct Answer for Quiz Post -->
+    <Spinner
+        android:id="@+id/correct_answer_spinner"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:visibility="gone" />
+
+    <!-- Skill Tags -->
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Skill Tags"
+        android:textSize="16sp"
+        android:layout_marginTop="8dp" />
+
+    <com.google.android.material.chip.ChipGroup
+        android:id="@+id/skill_tags_chip_group"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        app:chipSpacing="4dp" />
+
+    <com.google.android.material.textfield.TextInputLayout
+        android:id="@+id/skill_tag_input_layout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Add skill tag">
+        <com.google.android.material.textfield.TextInputEditText
+            android:id="@+id/skill_tag_input"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:visibility="gone">
+            android:layout_height="wrap_content" />
+    </com.google.android.material.textfield.TextInputLayout>
 
-            <EditText
-                android:id="@+id/caption_input"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:hint="Enter caption"
-                android:inputType="textMultiLine"
-                android:minLines="3"
-                android:layout_marginBottom="16dp" />
-        </LinearLayout>
+    <Button
+        android:id="@+id/add_skill_tag_button"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Add Tag"
+        android:layout_marginTop="4dp" />
 
-        <!-- Doubt Post Inputs -->
-        <LinearLayout
-            android:id="@+id/doubt_inputs"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:visibility="gone">
+    <!-- Save Button -->
+    <Button
+        android:id="@+id/save_post_button"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Save Changes"
+        android:layout_marginTop="16dp" />
 
-            <EditText
-                android:id="@+id/doubt_question_input"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:hint="Enter your question"
-                android:inputType="textMultiLine"
-                android:minLines="3"
-                android:layout_marginBottom="16dp" />
-        </LinearLayout>
-
-        <!-- Quiz Post Inputs -->
-        <LinearLayout
-            android:id="@+id/quiz_inputs"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:visibility="gone">
-
-            <EditText
-                android:id="@+id/quiz_question_input"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:hint="Enter quiz question"
-                android:inputType="textMultiLine"
-                android:minLines="3"
-                android:layout_marginBottom="8dp" />
-
-            <EditText
-                android:id="@+id/option1_input"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:hint="Option 1"
-                android:layout_marginBottom="8dp" />
-
-            <EditText
-                android:id="@+id/option2_input"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:hint="Option 2"
-                android:layout_marginBottom="8dp" />
-
-            <EditText
-                android:id="@+id/option3_input"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:hint="Option 3"
-                android:layout_marginBottom="8dp" />
-
-            <EditText
-                android:id="@+id/option4_input"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:hint="Option 4"
-                android:layout_marginBottom="8dp" />
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Select Correct Answer"
-                android:textSize="14sp"
-                android:layout_marginBottom="4dp" />
-
-            <Spinner
-                android:id="@+id/correct_answer_spinner"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginBottom="16dp" />
-        </LinearLayout>
-
-        <!-- Update Button -->
-        <Button
-            android:id="@+id/update_post_btn"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Update Post"
-            android:layout_marginTop="16dp" />
-    </LinearLayout>
-</ScrollView>
+</LinearLayout>

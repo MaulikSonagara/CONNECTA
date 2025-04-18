@@ -171,6 +171,7 @@ public class EditProfileFragment extends Fragment {
                     if (isUsernameTaken) {
                         userName.setError("Username is already taken");
                         userName.requestFocus();
+                        pd.dismiss();
                     } else {
                         emailAddress = user.getEmail();
                         // 🔹 Username is unique OR already belongs to the current user

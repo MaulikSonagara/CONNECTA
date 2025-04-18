@@ -1,8 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
-<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.core.widget.NestedScrollView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent">
-
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -10,146 +11,129 @@
         android:padding="16dp">
 
         <!-- Post Type Selector -->
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Select Post Type"
-            android:textSize="16sp"
-            android:textStyle="bold"
-            android:layout_marginBottom="8dp" />
-
         <Spinner
             android:id="@+id/post_type_spinner"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginBottom="16dp" />
+             />
 
-        <!-- Dynamic Input Container -->
-        <LinearLayout
-            android:id="@+id/input_container"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical" />
-
-        <!-- General Post Inputs (Hidden by Default) -->
+        <!-- General Post Inputs -->
         <LinearLayout
             android:id="@+id/general_inputs"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
             android:visibility="gone">
-
-            <ImageView
-                android:id="@+id/image_preview"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:maxHeight="300dp"
-                android:scaleType="fitCenter"
-                android:adjustViewBounds="true"
-                android:background="@drawable/border"
-                android:layout_marginBottom="8dp" />
-
-            <Button
-                android:id="@+id/pick_image_btn"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Pick Image"
-                android:layout_gravity="center"
-                android:layout_marginBottom="8dp" />
-
             <EditText
                 android:id="@+id/caption_input"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:hint="Enter caption"
-                android:inputType="textMultiLine"
-                android:minLines="3"
-                android:layout_marginBottom="16dp" />
+                android:hint="Enter caption" />
+            <Button
+                android:id="@+id/pick_image_btn"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Pick Image" />
+            <ImageView
+                android:id="@+id/image_preview"
+                android:layout_width="match_parent"
+                android:layout_height="200dp"
+                android:scaleType="fitCenter"
+                android:visibility="gone" />
         </LinearLayout>
 
-        <!-- Doubt Post Inputs (Hidden by Default) -->
+        <!-- Doubt Post Inputs -->
         <LinearLayout
             android:id="@+id/doubt_inputs"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
             android:visibility="gone">
-
             <EditText
                 android:id="@+id/doubt_question_input"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:hint="Enter your question"
-                android:inputType="textMultiLine"
-                android:minLines="3"
-                android:layout_marginBottom="16dp" />
+                android:hint="Enter your question" />
         </LinearLayout>
 
-        <!-- Quiz Post Inputs (Hidden by Default) -->
+        <!-- Quiz Post Inputs -->
         <LinearLayout
             android:id="@+id/quiz_inputs"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
             android:visibility="gone">
-
             <EditText
                 android:id="@+id/quiz_question_input"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:hint="Enter quiz question"
-                android:inputType="textMultiLine"
-                android:minLines="3"
-                android:layout_marginBottom="8dp" />
-
+                android:hint="Enter quiz question" />
             <EditText
                 android:id="@+id/option1_input"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:hint="Option 1"
-                android:layout_marginBottom="8dp" />
-
+                android:hint="Option 1" />
             <EditText
                 android:id="@+id/option2_input"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:hint="Option 2"
-                android:layout_marginBottom="8dp" />
-
+                android:hint="Option 2" />
             <EditText
                 android:id="@+id/option3_input"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:hint="Option 3"
-                android:layout_marginBottom="8dp" />
-
+                android:hint="Option 3" />
             <EditText
                 android:id="@+id/option4_input"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:hint="Option 4"
-                android:layout_marginBottom="8dp" />
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Select Correct Answer"
-                android:textSize="14sp"
-                android:layout_marginBottom="4dp" />
-
+                android:hint="Option 4" />
             <Spinner
                 android:id="@+id/correct_answer_spinner"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginBottom="16dp" />
+                android:layout_height="wrap_content" />
         </LinearLayout>
 
-        <!-- Submit Button -->
+        <!-- Skill Tags -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Skill Tags"
+            android:textSize="16sp"
+            android:layout_marginTop="8dp" />
+
+        <com.google.android.material.chip.ChipGroup
+            android:id="@+id/skill_tags_chip_group"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            app:chipSpacing="4dp" />
+
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/skill_tag_input_layout"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Add skill tag">
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/skill_tag_input"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content" />
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <Button
+            android:id="@+id/add_skill_tag_button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Add Tag"
+            android:layout_marginTop="4dp" />
+
+        <!-- Create Post Button -->
         <Button
             android:id="@+id/create_post_btn"
-            android:layout_width="match_parent"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Create Post"
             android:layout_marginTop="16dp" />
+
     </LinearLayout>
-</ScrollView>
+</androidx.core.widget.NestedScrollView>
