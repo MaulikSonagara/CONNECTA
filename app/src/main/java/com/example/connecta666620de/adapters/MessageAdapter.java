@@ -1,15 +1,19 @@
 package com.example.connecta666620de.adapters;
 
 import android.content.Context;
+import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
+import android.widget.PopupWindow;
 import android.widget.TextView;
 
+
 import androidx.annotation.NonNull;
+import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.bumptech.glide.Glide;
@@ -49,7 +53,7 @@ public class MessageAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
     }
 
     public interface OnMessageReactListener {
-        void onMessageReact(String messageId);
+        void onMessageReact(String messageId, String emoji);
     }
 
     public MessageAdapter(Context mContext, Map<String, List<Chat>> groupedMessages, String senderImageUrl, String receiverImageUrl, OnMessageDeleteListener deleteListener, OnMessageReactListener reactListener) {
@@ -63,15 +67,12 @@ public class MessageAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
 
     private void buildCombinedList(Map<String, List<Chat>> groupedMessages) {
         combinedList.clear();
-        // Create a flat list of all chats to sort by timestamp
         List<Chat> allChats = new ArrayList<>();
         for (List<Chat> chats : groupedMessages.values()) {
             allChats.addAll(chats);
         }
-        // Sort chats by timestamp (ascending)
         Collections.sort(allChats, Comparator.comparingLong(Chat::getTimestamp));
 
-        // Group sorted chats by date
         Map<String, List<Chat>> sortedGroupedMessages = new HashMap<>();
         for (Chat chat : allChats) {
             String dateKey = formatDate(chat.getTimestamp());
@@ -81,9 +82,7 @@ public class MessageAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
             sortedGroupedMessages.get(dateKey).add(chat);
         }
 
-        // Build combinedList in chronological order
         List<String> sortedDates = new ArrayList<>(sortedGroupedMessages.keySet());
-        // Sort dates to ensure chronological order
         Collections.sort(sortedDates, (d1, d2) -> {
             try {
                 SimpleDateFormat sdf = new SimpleDateFormat("d MMMM yyyy", Locale.getDefault());
@@ -154,7 +153,6 @@ public class MessageAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
             String currentUserId = FirebaseAuth.getInstance().getCurrentUser().getUid();
             boolean isSender = chat.getSender().equals(currentUserId);
 
-            // Show "Seen/Delivered" only for the sender's last message
             if (isSender && position == combinedList.size() - 1 && combinedList.get(position) instanceof Chat) {
                 msgHolder.seenTv.setVisibility(View.VISIBLE);
                 msgHolder.seenTv.setText(chat.isIsseen() ? " • Seen" : " • Delivered");
@@ -187,7 +185,6 @@ public class MessageAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
                 }
             }
 
-            // Handle delete button
             if (msgHolder.deleteBtn != null && isSender) {
                 msgHolder.deleteBtn.setVisibility(View.VISIBLE);
                 msgHolder.deleteBtn.setOnClickListener(v -> {
@@ -199,16 +196,10 @@ public class MessageAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
                 msgHolder.deleteBtn.setVisibility(View.GONE);
             }
 
-            // Handle reaction button
             if (msgHolder.reactBtn != null) {
-                msgHolder.reactBtn.setOnClickListener(v -> {
-                    if (reactListener != null && chat.getMessageId() != null) {
-                        reactListener.onMessageReact(chat.getMessageId());
-                    }
-                });
+                msgHolder.reactBtn.setOnClickListener(v -> showReactionPopup(msgHolder.reactBtn, chat.getMessageId()));
             }
 
-            // Display reactions
             if (chat.getReactions() != null && !chat.getReactions().isEmpty()) {
                 Map<String, Integer> reactionCounts = new HashMap<>();
                 for (String emoji : chat.getReactions().values()) {
@@ -221,12 +212,45 @@ public class MessageAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
                     TextView tv = new TextView(mContext);
                     tv.setText(emoji + (count > 1 ? " " + count : ""));
                     tv.setTextSize(14);
+                    tv.setPadding(8, 4, 8, 4);
+                    tv.setBackgroundResource(R.drawable.reaction_background);
+                    LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
+                            LinearLayout.LayoutParams.WRAP_CONTENT,
+                            LinearLayout.LayoutParams.WRAP_CONTENT
+                    );
+                    params.setMargins(4, 0, 4, 0);
+                    tv.setLayoutParams(params);
                     msgHolder.reactionsLayout.addView(tv);
                 }
             } else {
                 msgHolder.reactionsLayout.removeAllViews();
             }
         }
+    }
+
+    private void showReactionPopup(View anchorView, String messageId) {
+        View popupView = LayoutInflater.from(mContext).inflate(R.layout.reaction_popup, null);
+        PopupWindow popupWindow = new PopupWindow(
+                popupView,
+                ViewGroup.LayoutParams.WRAP_CONTENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT,
+                true
+        );
+
+        RecyclerView recyclerView = popupView.findViewById(R.id.reaction_recycler_view);
+        recyclerView.setLayoutManager(new LinearLayoutManager(mContext, LinearLayoutManager.HORIZONTAL, false));
+        ReactionAdapter reactionAdapter = new ReactionAdapter(mContext, emoji -> {
+            if (reactListener != null && messageId != null) {
+                reactListener.onMessageReact(messageId, emoji);
+            }
+            popupWindow.dismiss();
+        });
+        recyclerView.setAdapter(reactionAdapter);
+
+        // Position the popup above or below the anchor view
+        int[] location = new int[2];
+        anchorView.getLocationOnScreen(location);
+        popupWindow.showAtLocation(anchorView, Gravity.NO_GRAVITY, location[0], location[1] - popupView.getHeight());
     }
 
     @Override

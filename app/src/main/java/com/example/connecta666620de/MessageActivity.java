@@ -310,7 +310,6 @@ public class MessageActivity extends AppCompatActivity implements MessageAdapter
         newMessageRef.setValue(hashMap)
                 .addOnSuccessListener(aVoid -> {
                     updateChatlist(sender, receiver, message);
-                    // Scroll to the latest message
                     recyclerView.scrollToPosition(messageAdapter.getItemCount() - 1);
                 });
     }
@@ -343,7 +342,6 @@ public class MessageActivity extends AppCompatActivity implements MessageAdapter
 
                 messageAdapter = new MessageAdapter(MessageActivity.this, groupedMessages, senderImageUrl, receiverImageUrl, MessageActivity.this, MessageActivity.this);
                 recyclerView.setAdapter(messageAdapter);
-                // Scroll to the latest message
                 recyclerView.scrollToPosition(messageAdapter.getItemCount() - 1);
             }
 
@@ -371,10 +369,9 @@ public class MessageActivity extends AppCompatActivity implements MessageAdapter
     }
 
     private String formatDate(long timestamp) {
-        SimpleDateFormat format = new SimpleDateFormat("d MMMM", Locale.getDefault());
-        return format.format(new Date(timestamp));
+        SimpleDateFormat dateFormat = new SimpleDateFormat("d MMMM", Locale.getDefault());
+        return dateFormat.format(new Date(timestamp));
     }
-
 
     @Override
     public void onMessageDelete(String messageId) {
@@ -390,7 +387,7 @@ public class MessageActivity extends AppCompatActivity implements MessageAdapter
     }
 
     @Override
-    public void onMessageReact(String messageId) {
+    public void onMessageReact(String messageId, String emoji) {
         String chatId = user.getUid().compareTo(searchedUserUid) < 0 ? user.getUid() + "_" + searchedUserUid : searchedUserUid + "_" + user.getUid();
         DatabaseReference messageRef = FirebaseDatabase.getInstance().getReference("Connecta").child("Chat").child(chatId).child(messageId);
 
@@ -404,11 +401,10 @@ public class MessageActivity extends AppCompatActivity implements MessageAdapter
                         reactions = new HashMap<>();
                     }
                     String currentUserId = FirebaseAuth.getInstance().getCurrentUser().getUid();
-                    String emoji = reactions.get(currentUserId);
-                    if (emoji == null || !emoji.equals("👍")) {
-                        reactions.put(currentUserId, "👍");
-                    } else {
+                    if (reactions.containsKey(currentUserId) && reactions.get(currentUserId).equals(emoji)) {
                         reactions.remove(currentUserId);
+                    } else {
+                        reactions.put(currentUserId, emoji);
                     }
                     chat.setReactions(reactions);
                     messageRef.setValue(chat);
