@@ -22,6 +22,8 @@ import com.google.firebase.storage.FirebaseStorage;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -60,14 +62,52 @@ public class MessageAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
     }
 
     private void buildCombinedList(Map<String, List<Chat>> groupedMessages) {
-        for (Map.Entry<String, List<Chat>> entry : groupedMessages.entrySet()) {
-            List<Chat> chats = entry.getValue();
-            if (!chats.isEmpty()) {
-                long timestamp = chats.get(0).getTimestamp();
-                combinedList.add(formatDate(timestamp));
+        combinedList.clear();
+        // Create a flat list of all chats to sort by timestamp
+        List<Chat> allChats = new ArrayList<>();
+        for (List<Chat> chats : groupedMessages.values()) {
+            allChats.addAll(chats);
+        }
+        // Sort chats by timestamp (ascending)
+        Collections.sort(allChats, Comparator.comparingLong(Chat::getTimestamp));
+
+        // Group sorted chats by date
+        Map<String, List<Chat>> sortedGroupedMessages = new HashMap<>();
+        for (Chat chat : allChats) {
+            String dateKey = formatDate(chat.getTimestamp());
+            if (!sortedGroupedMessages.containsKey(dateKey)) {
+                sortedGroupedMessages.put(dateKey, new ArrayList<>());
+            }
+            sortedGroupedMessages.get(dateKey).add(chat);
+        }
+
+        // Build combinedList in chronological order
+        List<String> sortedDates = new ArrayList<>(sortedGroupedMessages.keySet());
+        // Sort dates to ensure chronological order
+        Collections.sort(sortedDates, (d1, d2) -> {
+            try {
+                SimpleDateFormat sdf = new SimpleDateFormat("d MMMM yyyy", Locale.getDefault());
+                Date date1 = sdf.parse(d1.equals("Today") ? sdf.format(new Date()) : d1.equals("Yesterday") ? sdf.format(getYesterday()) : d1);
+                Date date2 = sdf.parse(d2.equals("Today") ? sdf.format(new Date()) : d2.equals("Yesterday") ? sdf.format(getYesterday()) : d2);
+                return date1.compareTo(date2);
+            } catch (Exception e) {
+                return 0;
+            }
+        });
+
+        for (String date : sortedDates) {
+            List<Chat> chats = sortedGroupedMessages.get(date);
+            if (chats != null && !chats.isEmpty()) {
+                combinedList.add(date);
                 combinedList.addAll(chats);
             }
         }
+    }
+
+    private Date getYesterday() {
+        Calendar cal = Calendar.getInstance();
+        cal.add(Calendar.DAY_OF_YEAR, -1);
+        return cal.getTime();
     }
 
     @Override
@@ -111,18 +151,18 @@ public class MessageAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
             msgHolder.messageText.setText(chat.getMessage());
             msgHolder.timeText.setText(formatTime(chat.getTimestamp()));
 
-            if (position == combinedList.size() - 1) {
-                if (chat.isIsseen()) {
-                    msgHolder.seenTv.setText(" • Seen");
-                } else {
-                    msgHolder.seenTv.setText(" • Delivered");
-                }
+            String currentUserId = FirebaseAuth.getInstance().getCurrentUser().getUid();
+            boolean isSender = chat.getSender().equals(currentUserId);
+
+            // Show "Seen/Delivered" only for the sender's last message
+            if (isSender && position == combinedList.size() - 1 && combinedList.get(position) instanceof Chat) {
+                msgHolder.seenTv.setVisibility(View.VISIBLE);
+                msgHolder.seenTv.setText(chat.isIsseen() ? " • Seen" : " • Delivered");
             } else {
                 msgHolder.seenTv.setVisibility(View.GONE);
             }
 
-            String currentUserId = FirebaseAuth.getInstance().getCurrentUser().getUid();
-            String profileUrlToUse = chat.getSender().equals(currentUserId) ? senderImageUrl : receiverImageUrl;
+            String profileUrlToUse = isSender ? senderImageUrl : receiverImageUrl;
 
             if (profileUrlToUse == null || profileUrlToUse.equals("default")) {
                 msgHolder.profileImage.setImageResource(R.drawable.person_icon);
@@ -148,7 +188,7 @@ public class MessageAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
             }
 
             // Handle delete button
-            if (msgHolder.deleteBtn != null && chat.getSender().equals(currentUserId)) {
+            if (msgHolder.deleteBtn != null && isSender) {
                 msgHolder.deleteBtn.setVisibility(View.VISIBLE);
                 msgHolder.deleteBtn.setOnClickListener(v -> {
                     if (deleteListener != null && chat.getMessageId() != null) {
@@ -233,8 +273,7 @@ public class MessageAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
     public static class MessageViewHolder extends RecyclerView.ViewHolder {
         TextView messageText, timeText, seenTv;
         ImageView profileImage;
-        ImageButton deleteBtn;
-        ImageButton reactBtn;
+        ImageButton deleteBtn, reactBtn;
         LinearLayout reactionsLayout;
 
         public MessageViewHolder(View itemView) {

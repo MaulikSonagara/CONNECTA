@@ -50,16 +50,13 @@ public class MessageActivity extends AppCompatActivity implements MessageAdapter
 
     ImageView avatarIv;
     TextView userNameTv;
-
     ImageButton sendMsgbtn;
     EditText msgInputEt;
     String searchedUserUid;
-
     FirebaseAuth firebaseAuth;
     FirebaseUser user;
     FirebaseDatabase firebaseDatabase;
     DatabaseReference databaseReference;
-
     RecyclerView recyclerView;
     MessageAdapter messageAdapter;
     List<Chat> mChat;
@@ -270,7 +267,7 @@ public class MessageActivity extends AppCompatActivity implements MessageAdapter
         }
     }
 
-    private void seenMessage(String friendId){
+    private void seenMessage(String friendId) {
         chatId = user.getUid().compareTo(friendId) < 0 ? user.getUid() + "_" + friendId : friendId + "_" + user.getUid();
         currentUserId = user.getUid();
         seenMessageReference = FirebaseDatabase.getInstance().getReference("Connecta").child("Chat").child(chatId);
@@ -278,11 +275,11 @@ public class MessageActivity extends AppCompatActivity implements MessageAdapter
         seenListener = seenMessageReference.addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot snapshot) {
-                for (DataSnapshot ds: snapshot.getChildren()){
+                for (DataSnapshot ds : snapshot.getChildren()) {
                     Chat chat = ds.getValue(Chat.class);
-                    if (chat.getReceiver().equals(currentUserId) && chat.getSender().equals(friendId)){
+                    if (chat.getReceiver().equals(currentUserId) && chat.getSender().equals(friendId)) {
                         HashMap<String, Object> hashMap = new HashMap<>();
-                        hashMap.put("isseen",true);
+                        hashMap.put("isseen", true);
                         ds.getRef().updateChildren(hashMap);
                     }
                 }
@@ -313,6 +310,8 @@ public class MessageActivity extends AppCompatActivity implements MessageAdapter
         newMessageRef.setValue(hashMap)
                 .addOnSuccessListener(aVoid -> {
                     updateChatlist(sender, receiver, message);
+                    // Scroll to the latest message
+                    recyclerView.scrollToPosition(messageAdapter.getItemCount() - 1);
                 });
     }
 
@@ -344,6 +343,8 @@ public class MessageActivity extends AppCompatActivity implements MessageAdapter
 
                 messageAdapter = new MessageAdapter(MessageActivity.this, groupedMessages, senderImageUrl, receiverImageUrl, MessageActivity.this, MessageActivity.this);
                 recyclerView.setAdapter(messageAdapter);
+                // Scroll to the latest message
+                recyclerView.scrollToPosition(messageAdapter.getItemCount() - 1);
             }
 
             @Override
@@ -370,9 +371,10 @@ public class MessageActivity extends AppCompatActivity implements MessageAdapter
     }
 
     private String formatDate(long timestamp) {
-        SimpleDateFormat dateFormat = new SimpleDateFormat("d MMMM", Locale.getDefault());
-        return dateFormat.format(new Date(timestamp));
+        SimpleDateFormat format = new SimpleDateFormat("d MMMM", Locale.getDefault());
+        return format.format(new Date(timestamp));
     }
+
 
     @Override
     public void onMessageDelete(String messageId) {

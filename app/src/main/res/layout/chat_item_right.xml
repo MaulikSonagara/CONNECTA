@@ -1,92 +1,92 @@
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:layout_width="match_parent"
-    android:layout_height="wrap_content"
-    android:padding="8dp">
-
-    <RelativeLayout
-        android:layout_width="wrap_content"
+    <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+        xmlns:app="http://schemas.android.com/apk/res-auto"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_alignParentEnd="true">
+        android:padding="8dp">
 
-        <!-- Message Bubble -->
-        <TextView
-            android:id="@+id/show_message"
+        <RelativeLayout
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:background="@drawable/background_right"
-            android:text="Hello!"
-            android:layout_alignParentEnd="true"
-            android:textColor="@color/white"
-            android:textSize="16sp"
-            android:padding="8dp"
-            android:layout_marginEnd="30dp" />
+            android:layout_alignParentEnd="true">
 
-        <!-- Delete Button -->
-        <ImageButton
-            android:id="@+id/deleteBtn"
-            android:layout_width="24dp"
-            android:layout_height="24dp"
-            android:src="@drawable/ic_delete"
-            android:layout_alignTop="@id/show_message"
-            android:layout_toStartOf="@id/show_message"
-            android:layout_marginStart="8dp"
-            android:background="?selectableItemBackgroundBorderless"
-            app:tint="@color/folly" />
-
-        <!-- Profile Image -->
-        <ImageView
-            android:id="@+id/profile_image"
-            android:layout_width="25dp"
-            android:layout_height="25dp"
-            android:src="@drawable/person_icon"
-            android:layout_alignBottom="@id/show_message"
-            android:layout_alignParentEnd="true" />
-
-        <!-- Time + Seen Status -->
-        <LinearLayout
-            android:id="@+id/statusLayout"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:layout_below="@id/show_message"
-            android:layout_alignEnd="@id/show_message"
-            android:layout_marginTop="2dp">
-
+            <!-- Message Bubble -->
             <TextView
-                android:id="@+id/msgTime"
+                android:id="@+id/show_message"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="9:10 AM"
-                android:textSize="10sp"
-                android:textColor="#888888"/>
+                android:background="@drawable/background_right"
+                android:text="Hello!"
+                android:layout_alignParentEnd="true"
+                android:textColor="@color/white"
+                android:textSize="16sp"
+                android:padding="8dp"
+                android:layout_marginEnd="30dp" />
 
-            <TextView
-                android:id="@+id/seen_status"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text=""
-                android:textSize="11sp"
-                android:textColor="#03DAC5"
-                android:layout_marginStart="4dp" />
-
+            <!-- Delete Button -->
             <ImageButton
-                android:id="@+id/reactBtn"
+                android:id="@+id/deleteBtn"
                 android:layout_width="24dp"
                 android:layout_height="24dp"
-                android:src="@drawable/ic_react"
-                app:tint="@color/light_grey"
-                android:layout_marginStart="4dp" />
-        </LinearLayout>
+                android:src="@drawable/ic_delete"
+                android:layout_alignTop="@id/show_message"
+                android:layout_toStartOf="@id/show_message"
+                android:layout_marginStart="8dp"
+                android:background="?selectableItemBackgroundBorderless"
+                app:tint="@color/folly" />
 
-        <!-- Reactions Layout -->
-        <LinearLayout
-            android:id="@+id/reactionsLayout"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:layout_below="@id/statusLayout"
-            android:layout_alignEnd="@id/show_message"
-            android:layout_marginTop="4dp" />
+            <!-- Profile Image -->
+            <ImageView
+                android:id="@+id/profile_image"
+                android:layout_width="25dp"
+                android:layout_height="25dp"
+                android:src="@drawable/person_icon"
+                android:layout_alignBottom="@id/show_message"
+                android:layout_alignParentEnd="true" />
+
+            <!-- Time + Seen Status -->
+            <LinearLayout
+                android:id="@+id/statusLayout"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_below="@id/show_message"
+                android:layout_alignEnd="@id/show_message"
+                android:layout_marginTop="2dp">
+
+                <TextView
+                    android:id="@+id/msgTime"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="9:10 AM"
+                    android:textSize="10sp"
+                    android:textColor="#888888"/>
+
+                <TextView
+                    android:id="@+id/seen_status"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text=""
+                    android:textSize="11sp"
+                    android:textColor="#03DAC5"
+                    android:layout_marginStart="4dp" />
+
+                <ImageButton
+                    android:id="@+id/reactBtn"
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:src="@drawable/ic_react"
+                    app:tint="@color/light_grey"
+                    android:layout_marginStart="4dp" />
+            </LinearLayout>
+
+            <!-- Reactions Layout -->
+            <LinearLayout
+                android:id="@+id/reactionsLayout"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_below="@id/statusLayout"
+                android:layout_alignEnd="@id/show_message"
+                android:layout_marginTop="4dp" />
+        </RelativeLayout>
     </RelativeLayout>
-</RelativeLayout>
